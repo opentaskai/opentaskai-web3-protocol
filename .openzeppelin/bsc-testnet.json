@@ -9,6 +9,11 @@
       "address": "0xbA27D2ff0eD0e3914C129606DE2f8cD25c659b5d",
       "txHash": "0xdfebef4898687c72d5468af21624193c737401aaa74337dff39533765bb26c51",
       "kind": "transparent"
+    },
+    {
+      "address": "0xF58cD5dEAA238210d2cc1328Dd8eB27F5B2a30b2",
+      "txHash": "0xbb8d8acbf17b3906f9c92a150c6e9a8489052c3b77b045faa2bcc7a56a331c26",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -94,9 +99,155 @@
             "label": "userAccounts",
             "offset": 0,
             "slot": "5",
-            "type": "t_mapping(t_address,t_mapping(t_address,t_struct(Account)1223_storage))",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_struct(Account)2174_storage))",
             "contract": "Payment",
             "src": "contracts/Payment.sol:58"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_struct(Account)2174_storage))": {
+            "label": "mapping(address => mapping(address => struct Account))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Account)2174_storage)": {
+            "label": "mapping(address => struct Account)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_address)": {
+            "label": "mapping(bytes32 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Account)2174_storage": {
+            "label": "struct Account",
+            "members": [
+              {
+                "label": "available",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "frozen",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {}
+      }
+    },
+    "772554da3570360f1cbc3fda06b6254c54c232e72e3588e6476150d170455984": {
+      "address": "0x3212257cAc8cf8eC690e232868f90681F2CDf7a3",
+      "txHash": "0xc874d3402f0c435f6a98c6aacd99128823e7565e0887de693b5c6d4c2355b6a8",
+      "layout": {
+        "solcVersion": "0.8.11",
+        "storage": [
+          {
+            "label": "config",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "Configable",
+            "src": "contracts/Configable.sol:10"
+          },
+          {
+            "label": "owner",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "Configable",
+            "src": "contracts/Configable.sol:11"
+          },
+          {
+            "label": "_initialized",
+            "offset": 20,
+            "slot": "1",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "label": "_initializing",
+            "offset": 21,
+            "slot": "1",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "label": "_domainHash",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_bytes32",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:49"
+          },
+          {
+            "label": "enabled",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_bool",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:51"
+          },
+          {
+            "label": "nosnEnabled",
+            "offset": 1,
+            "slot": "3",
+            "type": "t_bool",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:52"
+          },
+          {
+            "label": "signer",
+            "offset": 2,
+            "slot": "3",
+            "type": "t_address",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:53"
+          },
+          {
+            "label": "feeTo",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_address",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:54"
+          },
+          {
+            "label": "records",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_mapping(t_bytes32,t_address)",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:57"
+          },
+          {
+            "label": "userAccounts",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_struct(Account)1223_storage))",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:60"
           }
         ],
         "types": {
