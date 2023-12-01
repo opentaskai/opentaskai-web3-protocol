@@ -540,7 +540,7 @@ describe('Payment', async () => {
     LogConsole.debug('tokenName:', tokenName);
     LogConsole.debug('tokenAddr:', tokenAddr);
   })
-    it('role', async () => {
+    it('config', async () => {
       await expect(payment.changeOwner(owner.address)).to.be.revertedWith('no change');
       await expect(payment.setSigner(signer.address)).to.be.revertedWith('no change');
       await expect(payment.setFeeTo(feeTo.address)).to.be.revertedWith('no change');
@@ -607,8 +607,8 @@ describe('Payment', async () => {
     }); 
   });
 
-  // await testCase();
+  await testCase();
 
-  // await testCase('usdt');
+  await testCase('usdt');
   
 })

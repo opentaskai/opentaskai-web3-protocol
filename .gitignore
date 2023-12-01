@@ -1,0 +1,14 @@
+node_modules
+artifacts
+cache
+config.ts
+.hardhat.*
+.data.json
+.setup.json
+.yarn.lock
+.env
+pnpm-lock.yaml
+package-lock.json
+typechain
+build
+flatten
