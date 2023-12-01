@@ -16,41 +16,41 @@
     "verified": true
   },
   "feeWallet": {
-		"address": "0xBe46A6c57aB6d9272b5674C47fe587Dd3B5B54Db",
-		"constructorArgs": [],
-		"upgradedAddress": "",
-		"deployed": true,
-		"upgraded": true,
-		"verified": true
-	},
+    "address": "0xBe46A6c57aB6d9272b5674C47fe587Dd3B5B54Db",
+    "constructorArgs": [],
+    "upgradedAddress": "",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
+  },
   "USDT": {
-    "address": "",
+    "address": "0xF76e44665b9c20b912C57D0BfF425E74FBdeB658",
     "contractName": "ERC20Token",
     "constructorArgs": [
       "Test USDT",
       "USDT",
       18
     ],
-    "upgradedAddress": "",
-    "deployed": false,
-    "upgraded": false,
-    "verified": false
+    "upgradedAddress": "0xF76e44665b9c20b912C57D0BfF425E74FBdeB658",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
   },
   "Config": {
-		"address": "",
-		"constructorArgs": [],
-		"upgradedAddress": "",
-		"deployed": false,
-		"upgraded": false,
-		"verified": false
-	},
+    "address": "0x55bB4dAF3568055AD386fbcDa86d6a407961fB73",
+    "constructorArgs": [],
+    "upgradedAddress": "0x55bB4dAF3568055AD386fbcDa86d6a407961fB73",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
+  },
   "Payment": {
     "proxy": true,
-    "address": "",
+    "address": "0xbA27D2ff0eD0e3914C129606DE2f8cD25c659b5d",
     "constructorArgs": [],
-    "upgradedAddress": "",
-    "deployed": false,
-    "upgraded": false,
-    "verified": false
+    "upgradedAddress": "0x9b11F1ff7C6fEC4e4b2Fb3ff748980F4620A75c2",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
   }
 }

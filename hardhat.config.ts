@@ -90,11 +90,11 @@
        accounts: [data.PrivateKey]
      },
      bsctestnet: {
-       url: `https://data-seed-prebsc-1-s1.binance.org:8545`,
+       url: `https://bsc-testnet.publicnode.com`,
        accounts: [data.PrivateKey]
      },
      bscmainnet: {
-       url: `https://rpc.ankr.com/bsc`,
+       url: `https://binance.llamarpc.com`,
        accounts: [data.PrivateKey]
      },
      opbnbtestnet: {

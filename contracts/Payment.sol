@@ -46,8 +46,8 @@ struct TradeData {
 contract Payment is Configable, Initializable {
     using SafeMath for uint;
 
-    bool public enabled = true;
-    bool public nosnEnabled = false;
+    bool public enabled;
+    bool public nosnEnabled;
     address public signer;
     address public feeTo;
 
@@ -83,6 +83,9 @@ contract Payment is Configable, Initializable {
         owner = msg.sender;
         signer = msg.sender;
         feeTo = msg.sender;
+
+        enabled = true;
+        nosnEnabled = false;
     }
 
     function setSigner(address _user) external onlyDev {
