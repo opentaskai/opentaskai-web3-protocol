@@ -8,6 +8,7 @@ import { signData, computeDomainSeparator } from './signature-helper'
 import { TypedDataDomain } from "@ethersproject/abstract-signer"
 import { Signature } from "@ethersproject/bytes"
 import { expandWithDecimals } from './numberDecimals'
+import { LogConsole } from './logconsol'
 
 async function erc20Contract(name: string, symbol: string, decimals: number): Promise<ERC20Token> {
     let factory = await ethers.getContractFactory('ERC20Token')
