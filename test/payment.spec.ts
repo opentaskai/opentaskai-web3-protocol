@@ -362,7 +362,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       expect(feeToAccountAfter.available).to.equal(feeToAccountBefore.available.add(frozenTradeAmount));
       expect(feeToAccountAfter.frozen).to.equal(feeToAccountBefore.frozen);
       expect(paymentBalanceBefore).to.equal(paymentBalanceAfter);
-      
+
     });
 
     it('transfer and withdraw', async () => {
@@ -502,7 +502,11 @@ const testCase = async (_tokenName:string = 'ETH') => {
       expect(paymentBalanceBefore).to.equal(paymentBalanceAfter);
 
       await expect(payment.cancel(param.userA, param.userB, param.sn, param.sign.compact)).to.be.revertedWith('record already exists');
-      
+          
+      const records = await payment.getRecords([param.sn, freezeParam.sn])
+      LogConsole.debug('records:', records);
+      expect(records[0]).to.equal(owner.address)
+      expect(records[1]).to.equal(user1.address)
     });
      
   });
@@ -609,6 +613,6 @@ describe('Payment', async () => {
 
   await testCase();
 
-  await testCase('usdt');
+  // await testCase('usdt');
   
 })

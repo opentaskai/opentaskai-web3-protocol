@@ -139,7 +139,7 @@ contract Payment is Configable, Initializable {
         uint _available, 
         uint _frozen,
         bytes32 _sn,
-        bytes memory _signature
+        bytes calldata _signature
     ) external payable onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _available, _frozen, _sn, address(this)));
@@ -164,7 +164,7 @@ contract Payment is Configable, Initializable {
         uint _available, 
         uint _frozen,
         bytes32 _sn,
-        bytes memory _signature
+        bytes calldata _signature
     ) external onlyEnabled {
         require(records[_sn] == address(0), "record already exists");
         bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _available, _frozen, _sn, address(this)));
@@ -185,7 +185,7 @@ contract Payment is Configable, Initializable {
         address _token, 
         uint _amount,
         bytes32 _sn,
-        bytes memory _signature
+        bytes calldata _signature
     ) external onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         bytes32 messageHash = keccak256(abi.encodePacked(_token, _amount, _sn, address(this)));
@@ -204,7 +204,7 @@ contract Payment is Configable, Initializable {
         address _token, 
         uint _amount,
         bytes32 _sn,
-        bytes memory _signature
+        bytes calldata _signature
     ) external onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         bytes32 messageHash = keccak256(abi.encodePacked(_token, _amount, _sn, address(this)));
@@ -225,44 +225,44 @@ contract Payment is Configable, Initializable {
 
     function transfer(
         bool _isWithdraw,
-        TransferData memory deal,
+        TransferData calldata _deal,
         bytes32 _sn,
-        bytes memory _signature
+        bytes calldata _signature
     ) external onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
-        require(deal.available + deal.frozen == deal.amount + deal.fee && deal.amount + deal.fee > 0, "invalid deal");
-        bytes32 messageHash = keccak256(abi.encodePacked(deal.token, deal.from, deal.to, deal.available, deal.frozen, deal.amount, deal.fee, _sn, address(this)));
+        require(_deal.available + _deal.frozen == _deal.amount + _deal.fee && _deal.amount + _deal.fee > 0, "invalid deal");
+        bytes32 messageHash = keccak256(abi.encodePacked(_deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _sn, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         records[_sn] = msg.sender;
-        emit TransferLog(_sn, deal.token, deal.from, deal.to, deal.available, deal.frozen, deal.amount, deal.fee);
+        emit TransferLog(_sn, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee);
 
-        Account storage fromAccount = userAccounts[deal.from][deal.token];
+        Account storage fromAccount = userAccounts[_deal.from][_deal.token];
 
-        if(deal.available > 0) {
-            fromAccount.available = fromAccount.available.sub(deal.available, 'insufficient available');
+        if(_deal.available > 0) {
+            fromAccount.available = fromAccount.available.sub(_deal.available, 'insufficient available');
         }
 
-        if(deal.frozen > 0) {
-            fromAccount.frozen = fromAccount.frozen.sub(deal.frozen, 'insufficient frozen');
+        if(_deal.frozen > 0) {
+            fromAccount.frozen = fromAccount.frozen.sub(_deal.frozen, 'insufficient frozen');
         }
 
         if(_isWithdraw) {
-            if(deal.amount > 0) {
-                _withdraw(deal.to, deal.token, deal.amount);
+            if(_deal.amount > 0) {
+                _withdraw(_deal.to, _deal.token, _deal.amount);
             }
-            if(deal.fee > 0) {
-                _withdraw(feeTo, deal.token, deal.fee);
+            if(_deal.fee > 0) {
+                _withdraw(feeTo, _deal.token, _deal.fee);
             }
         } else {
-            if(deal.amount > 0) {
-                Account storage toAccount = userAccounts[deal.to][deal.token];
-                toAccount.available = toAccount.available.add(deal.amount);
+            if(_deal.amount > 0) {
+                Account storage toAccount = userAccounts[_deal.to][_deal.token];
+                toAccount.available = toAccount.available.add(_deal.amount);
             }
 
-            if(deal.fee > 0) {
-                Account storage feeAccount = userAccounts[feeTo][deal.token];
-                feeAccount.available = feeAccount.available.add(deal.fee);
+            if(_deal.fee > 0) {
+                Account storage feeAccount = userAccounts[feeTo][_deal.token];
+                feeAccount.available = feeAccount.available.add(_deal.fee);
             }
         }
         
@@ -270,10 +270,10 @@ contract Payment is Configable, Initializable {
     }
 
     function cancel(
-        TradeData memory _userA,
-        TradeData memory _userB,
+        TradeData calldata _userA,
+        TradeData calldata _userB,
         bytes32 _sn,
-        bytes memory _signature
+        bytes calldata _signature
     ) external onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         bytes32 messageHash = keccak256(abi.encodePacked(_sn, _userA.user, _userA.token, _userA.amount, _userA.fee, _userB.user, _userB.token, _userB.amount, _userB.fee, address(this)));
@@ -334,7 +334,7 @@ contract Payment is Configable, Initializable {
 
     function verifyMessage(
         bytes32 _messageHash,
-        bytes memory _signature
+        bytes calldata _signature
     ) public view returns (bool) {
         bytes32 hash;
         if(_domainHash == 0x0000000000000000000000000000000000000000000000000000000000000000) {
@@ -345,7 +345,7 @@ contract Payment is Configable, Initializable {
         return Signature.verify(hash, signer, _signature);
     }
 
-    function getUserAssets(address _user, address[] memory _tokens) external view returns (AssetAccount[] memory result) {
+    function getUserAssets(address _user, address[] calldata _tokens) external view returns (AssetAccount[] memory result) {
         result = new AssetAccount[](_tokens.length);
         for (uint i; i<_tokens.length; i++) {
             Account memory userAccount = userAccounts[_user][_tokens[i]];
@@ -358,7 +358,7 @@ contract Payment is Configable, Initializable {
         return result;
     }
 
-    function getMultiUserAssets(address[] memory _users, address[] memory _tokens) external view returns (DetailedAccount[] memory result) {
+    function getMultiUserAssets(address[] calldata _users, address[] memory _tokens) external view returns (DetailedAccount[] memory result) {
         require(_users.length == _tokens.length, 'invalid parameters');
         result = new DetailedAccount[](_tokens.length);
         for (uint i; i<_tokens.length; i++) {
@@ -373,4 +373,10 @@ contract Payment is Configable, Initializable {
         return result;
     }
     
+    function getRecords(bytes32[] calldata _sns) external view returns (address[] memory result) {
+        result = new address[](_sns.length);
+        for (uint i; i<_sns.length; i++) {
+            result[i] = records[_sns[i]];
+        }
+    }
 }
