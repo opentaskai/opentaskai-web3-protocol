@@ -1,0 +1,32 @@
+[
+    {
+        "call": true,
+        "called": false,
+        "functionName": "setupConfig",
+        "contractName": "Payment",
+        "contractAddr": "",
+        "args": [
+			"${Config.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": false,
+        "functionName": "setSigner",
+        "contractName": "Payment",
+        "contractAddr": "",
+        "args": [
+			"${signerWallet.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": false,
+        "functionName": "setFeeTo",
+        "contractName": "Payment",
+        "contractAddr": "",
+        "args": [
+			"${feeWallet.address}"
+        ]
+    }
+]
