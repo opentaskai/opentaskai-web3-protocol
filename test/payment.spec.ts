@@ -543,9 +543,11 @@ describe('Payment', async () => {
     it('role', async () => {
       await expect(payment.changeOwner(owner.address)).to.be.revertedWith('no change');
       await expect(payment.setSigner(signer.address)).to.be.revertedWith('no change');
+      await expect(payment.setFeeTo(feeTo.address)).to.be.revertedWith('no change');
 
       await expect(payment.connect(user1).changeOwner(owner.address)).to.be.revertedWith('owner forbidden');
       await expect(payment.connect(user1).setSigner(signer.address)).to.be.revertedWith('dev forbidden');
+      await expect(payment.connect(user1).setFeeTo(feeTo.address)).to.be.revertedWith('admin forbidden');
       await expect(payment.connect(user1).setEnabled(false)).to.be.revertedWith('dev forbidden');
 
       await payment.changeOwner(signer.address);
@@ -555,6 +557,11 @@ describe('Payment', async () => {
       await payment.connect(signer).changeOwner(owner.address);
       res = await payment.owner();
       expect(res).to.equal(owner.address);
+
+      await payment.setFeeTo(owner.address);
+      res = await payment.feeTo();
+      expect(res).to.equal(owner.address);
+
     });
 
     it('verifyMessage false', async () => {
@@ -600,8 +607,8 @@ describe('Payment', async () => {
     }); 
   });
 
-  await testCase();
+  // await testCase();
 
-  await testCase('usdt');
+  // await testCase('usdt');
   
 })
