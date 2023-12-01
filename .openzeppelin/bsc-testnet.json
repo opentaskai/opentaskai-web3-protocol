@@ -300,6 +300,152 @@
         },
         "namespaces": {}
       }
+    },
+    "3ea35a1b5ef85833a597d5cb4fdbb282772b535ce8a3fd1b76d5e84922ee3ddc": {
+      "address": "0x70B8b0bB66fF56018A880242F447b8cC3487Ce37",
+      "txHash": "0xc041ab2ee476396f7d890b9b53c86bf30f8927f078eaa7126b1df763c33ffcd2",
+      "layout": {
+        "solcVersion": "0.8.11",
+        "storage": [
+          {
+            "label": "config",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "Configable",
+            "src": "contracts/Configable.sol:10"
+          },
+          {
+            "label": "owner",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "Configable",
+            "src": "contracts/Configable.sol:11"
+          },
+          {
+            "label": "_initialized",
+            "offset": 20,
+            "slot": "1",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "label": "_initializing",
+            "offset": 21,
+            "slot": "1",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "label": "_domainHash",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_bytes32",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:49"
+          },
+          {
+            "label": "enabled",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_bool",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:51"
+          },
+          {
+            "label": "nosnEnabled",
+            "offset": 1,
+            "slot": "3",
+            "type": "t_bool",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:52"
+          },
+          {
+            "label": "signer",
+            "offset": 2,
+            "slot": "3",
+            "type": "t_address",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:53"
+          },
+          {
+            "label": "feeTo",
+            "offset": 0,
+            "slot": "4",
+            "type": "t_address",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:54"
+          },
+          {
+            "label": "records",
+            "offset": 0,
+            "slot": "5",
+            "type": "t_mapping(t_bytes32,t_address)",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:57"
+          },
+          {
+            "label": "userAccounts",
+            "offset": 0,
+            "slot": "6",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_struct(Account)1223_storage))",
+            "contract": "Payment",
+            "src": "contracts/Payment.sol:60"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_struct(Account)1223_storage))": {
+            "label": "mapping(address => mapping(address => struct Account))",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_struct(Account)1223_storage)": {
+            "label": "mapping(address => struct Account)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_address)": {
+            "label": "mapping(bytes32 => address)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Account)1223_storage": {
+            "label": "struct Account",
+            "members": [
+              {
+                "label": "available",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "frozen",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              }
+            ],
+            "numberOfBytes": "64"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {}
+      }
     }
   }
 }
