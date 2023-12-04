@@ -1,0 +1,56 @@
+{
+  "ownerWallet": {
+    "address": "0xBe46A6c57aB6d9272b5674C47fe587Dd3B5B54Db",
+    "constructorArgs": [],
+    "upgradedAddress": "",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
+  },
+  "signerWallet": {
+    "address": "0x278bD24A8B65D34bBF0a5b0D4b5510C2135d8f84",
+    "constructorArgs": [],
+    "upgradedAddress": "",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
+  },
+  "feeWallet": {
+    "address": "0xBe46A6c57aB6d9272b5674C47fe587Dd3B5B54Db",
+    "constructorArgs": [],
+    "upgradedAddress": "",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
+  },
+  "USDT": {
+    "address": "0xbA27D2ff0eD0e3914C129606DE2f8cD25c659b5d",
+    "contractName": "ERC20Token",
+    "constructorArgs": [
+      "Test USDT",
+      "USDT",
+      6
+    ],
+    "upgradedAddress": "",
+    "deployed": true,
+    "upgraded": true,
+    "verified": false
+  },
+  "Config": {
+    "address": "0xF76e44665b9c20b912C57D0BfF425E74FBdeB658",
+    "constructorArgs": [],
+    "upgradedAddress": "",
+    "deployed": true,
+    "upgraded": true,
+    "verified": false
+  },
+  "Payment": {
+    "proxy": true,
+    "address": "0x9Aa6Ff7524C8bb7E78e9853713657FD678C8F3F7",
+    "constructorArgs": [],
+    "upgradedAddress": "0x55bB4dAF3568055AD386fbcDa86d6a407961fB73",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
+  }
+}

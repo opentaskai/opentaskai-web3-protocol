@@ -25,6 +25,7 @@
 	},
 	"USDT": {
 		"address": "",
+		"contractName": "ERC20Token",
 		"constructorArgs": [],
 		"upgradedAddress": "",
 		"deployed": true,
