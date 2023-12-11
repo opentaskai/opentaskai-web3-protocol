@@ -28,5 +28,16 @@
         "args": [
 			"${feeWallet.address}"
         ]
+    },
+    {
+        "call": true,
+        "called": false,
+        "name": "AIOriginals",
+        "functionName": "setupConfig",
+        "contractName": "NFT",
+        "contractAddr": "",
+        "args": [
+			"${Config.address}"
+        ]
     }
 ]

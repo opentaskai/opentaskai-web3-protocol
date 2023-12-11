@@ -8,10 +8,10 @@ import "./ERC721/extensions/ERC721Enumerable.sol";
 import "./Configable.sol";
 
 contract NFT is ERC721Enumerable, Configable, Initializable {
-    uint public maxTotalSupply = type(uint).max;
+    uint public maxTotalSupply;
     string base_uri;
     string suffix;
-    uint256 public claimLimit = 1;
+    uint256 public claimLimit;
     mapping(address => uint256) public claimCount;
 
         
@@ -19,6 +19,8 @@ contract NFT is ERC721Enumerable, Configable, Initializable {
 
     function initialize(string memory _name, string memory _symbol) external initializer 
     {
+        maxTotalSupply = type(uint).max;
+        claimLimit = 1;
         owner = msg.sender;
         name = _name;
         symbol = _symbol;
@@ -70,12 +72,7 @@ contract NFT is ERC721Enumerable, Configable, Initializable {
         _safeMint(_to, tokenId);
     }
 
-    function kill() external onlyOwner
-    {
-        selfdestruct(payable(owner));
-    }
-
-    function setBaseTokenURI(string calldata _base_uri, string calldata _suffix) external onlyDev
+    function setURI(string calldata _base_uri, string calldata _suffix) external onlyDev
     {
         base_uri = _base_uri;
         suffix = _suffix;
