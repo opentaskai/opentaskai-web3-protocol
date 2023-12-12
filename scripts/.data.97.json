@@ -52,5 +52,18 @@
     "deployed": true,
     "upgraded": true,
     "verified": true
+  },
+  "AIOriginals": {
+    "proxy": true,
+    "address": "",
+    "contractName": "NFT",
+    "constructorArgs": [
+      "OpenTaskAI Originals",
+      "AIOriginals"
+    ],
+    "upgradedAddress": "",
+    "deployed": false,
+    "upgraded": false,
+    "verified": false
   }
 }

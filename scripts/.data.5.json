@@ -55,13 +55,13 @@
   },
   "AIOriginals": {
     "proxy": true,
-    "address": "0xF58cD5dEAA238210d2cc1328Dd8eB27F5B2a30b2",
+    "address": "0xcEd30c85DECdAAa8c56233101162a2eaA2694BB2",
     "contractName": "NFT",
     "constructorArgs": [
       "OpenTaskAI Originals",
       "AIOriginals"
     ],
-    "upgradedAddress": "0x3212257cAc8cf8eC690e232868f90681F2CDf7a3",
+    "upgradedAddress": "0x59422e6d2d5DBEA5255aF2336294863cFf255E38",
     "deployed": true,
     "upgraded": true,
     "verified": false

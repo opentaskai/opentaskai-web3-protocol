@@ -6,6 +6,7 @@ pragma solidity ^0.8.11;
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "./ERC721/extensions/ERC721Enumerable.sol";
 import "./Configable.sol";
+import "./lib/Signature.sol";
 
 contract NFT is ERC721Enumerable, Configable, Initializable {
     uint public maxTotalSupply;
@@ -13,6 +14,8 @@ contract NFT is ERC721Enumerable, Configable, Initializable {
     string suffix;
     uint256 public claimLimit;
     mapping(address => uint256) public claimCount;
+    bytes32 _domainHash;
+    address public signer;
 
         
     event MintTo(address indexed _user, uint indexed _tokenId);
@@ -54,8 +57,10 @@ contract NFT is ERC721Enumerable, Configable, Initializable {
         _claim(_to);
     }
 
-    function mint() external
+    function mint(bytes32 _sn, bytes calldata _signature) external
     {
+        bytes32 messageHash = keccak256(abi.encodePacked(_sn, address(this)));
+        require(verifyMessage(messageHash, _signature), "invalid signature");
         _claim(msg.sender);
     }
 
@@ -86,5 +91,29 @@ contract NFT is ERC721Enumerable, Configable, Initializable {
     function setClaimLimit(uint256 _value) external onlyAdmin {
         require(claimLimit != _value, 'no change');
         claimLimit = _value;
+    }
+
+    function setSigner(address _user) external onlyDev {
+        require(signer != _user, 'no change');
+        signer = _user;
+    }
+
+    function setSignerContract(address _signer, bytes32 _hash) external onlyDev {
+        require(signer != _signer || _domainHash != _hash, 'No change');
+        signer = _signer;
+        _domainHash = _hash;
+    }
+
+    function verifyMessage(
+        bytes32 _messageHash,
+        bytes calldata _signature
+    ) public view returns (bool) {
+        bytes32 hash;
+        if(_domainHash == 0x0000000000000000000000000000000000000000000000000000000000000000) {
+            hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash));
+        } else {
+            hash = keccak256(abi.encodePacked("\x19\x01", _domainHash, _messageHash));
+        }
+        return Signature.verify(hash, signer, _signature);
     }
 }

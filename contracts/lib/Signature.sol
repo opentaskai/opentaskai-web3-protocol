@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.11;
 
-import {Address} from "@openzeppelin/contracts/utils/Address.sol";
-import {IERC1271} from "@openzeppelin/contracts/interfaces/IERC1271.sol";
+import {Address} from "../utils/Address.sol";
+import {IERC1271} from "../interfaces/IERC1271.sol";
 
 library Signature {
     function recoverAddresses(bytes32 _hash, bytes memory _signatures) internal pure returns (address[] memory addresses) {
