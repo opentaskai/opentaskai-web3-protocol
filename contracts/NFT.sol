@@ -9,19 +9,26 @@ import "./Configable.sol";
 import "./lib/Signature.sol";
 
 contract NFT is ERC721Enumerable, Configable, Initializable {
+    uint id;
     uint public maxTotalSupply;
     string base_uri;
     string suffix;
-    uint256 public claimLimit;
-    mapping(address => uint256) public claimCount;
     bytes32 _domainHash;
     address public signer;
-
+    uint256 public claimLimit;
+    mapping(address => uint256) public claimCount;
+    // sn, user
+    mapping(bytes32 => address) public records;
         
-    event MintTo(address indexed _user, uint indexed _tokenId);
+    event MintLog(address indexed _user, uint indexed _tokenId, bytes32 indexed _sn);
 
     function initialize(string memory _name, string memory _symbol) external initializer 
     {
+        uint _id;
+        assembly {
+            _id := chainid()
+        }
+        id = _id;
         maxTotalSupply = type(uint).max;
         claimLimit = 1;
         owner = msg.sender;
@@ -52,27 +59,30 @@ contract NFT is ERC721Enumerable, Configable, Initializable {
         return _exists(_tokenId);
     }
 
-    function mintTo(address _to) external onlyAdmin
+    function mintTo(address _to, bytes32 _sn) external onlyAdmin
     {
-        _claim(_to);
+        _claim(_to, _sn);
     }
 
-    function mint(bytes32 _sn, bytes calldata _signature) external
+    function mint(bytes32 _sn, uint _expired, bytes calldata _signature) external
     {
-        bytes32 messageHash = keccak256(abi.encodePacked(_sn, address(this)));
+        require(_expired > block.timestamp, "request is expired");
+        bytes32 messageHash = keccak256(abi.encodePacked(_sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        _claim(msg.sender);
+        _claim(msg.sender, _sn);
     }
 
-    function _claim(address _to) internal 
+    function _claim(address _to, bytes32 _sn) internal 
     {
+        require(records[_sn] == address(0), "record already exists");
+
         uint tokenId = totalSupply();
         ++tokenId;
         require(tokenId < maxTotalSupply, "claim is over");
+ 
+        emit MintLog(_to, tokenId, _sn);
 
-        emit MintTo(_to, tokenId);
-        _safeMint(_to, tokenId);
-
+        records[_sn] = _to;
         claimCount[_to] += 1;
         _safeMint(_to, tokenId);
     }

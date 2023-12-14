@@ -45,7 +45,7 @@ struct TradeData {
 
 contract Payment is Configable, Initializable {
     using SafeMath for uint;
-    
+    uint id;
     bytes32 _domainHash;
 
     bool public enabled;
@@ -61,7 +61,7 @@ contract Payment is Configable, Initializable {
 
     event DepositLog(address indexed _user, address indexed _token, uint indexed _amount, address _from);
     event WithdrawLog(address indexed _user, address indexed _token, uint indexed _amount, address _from);
-    event DepositDetailLog(bytes32 indexed _sn, address indexed _token, address _from, address _to, uint _available, uint _frozen);
+    event DepositDetailLog(bytes32 indexed _sn, address indexed _token, address _from, address _to, uint _amount, uint _frozen);
     event WithdrawDetailLog(bytes32 indexed _sn, address indexed _token, address _from, address _to, uint _available, uint _frozen);
     event FreezeLog(bytes32 indexed _sn, address indexed _token, uint _amount, address _user);
     event UnfreezeLog(bytes32 indexed _sn, address indexed _token, uint _amount, address _user);
@@ -82,6 +82,11 @@ contract Payment is Configable, Initializable {
     }
 
     function initialize() external initializer {
+        uint _id;
+        assembly {
+            _id := chainid()
+        }
+        id = _id;
         owner = msg.sender;
         signer = msg.sender;
         feeTo = msg.sender;
@@ -136,23 +141,26 @@ contract Payment is Configable, Initializable {
     function depositAndFreeze(
         address _to, 
         address _token, 
-        uint _available, 
+        uint _amount, // deposit amount
         uint _frozen,
         bytes32 _sn,
+        uint _expired,
         bytes calldata _signature
     ) external payable onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
-        bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _available, _frozen, _sn, address(this)));
+        require(_expired > block.timestamp, "request is expired");
+        bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _amount, _frozen, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
+        Account storage userAccount = userAccounts[_to][_token];
+        uint available = userAccount.available.add(_amount);
+        require(available >= _frozen, "insufficient available");
+        
+        emit DepositDetailLog(_sn, _token, msg.sender, _to, _amount, _frozen);
 
-        emit DepositDetailLog(_sn, _token, msg.sender, _to, _available, _frozen);
-
-        _deposit(_token, _available + _frozen);
+        _deposit(_token, _amount);
 
         records[_sn] = msg.sender;
-
-        Account storage userAccount = userAccounts[_to][_token];
-        userAccount.available = userAccount.available.add(_available);
+        userAccount.available = available.sub(_frozen);
         userAccount.frozen = userAccount.frozen.add(_frozen);
 
         return true;
@@ -164,10 +172,12 @@ contract Payment is Configable, Initializable {
         uint _available, 
         uint _frozen,
         bytes32 _sn,
+        uint _expired,
         bytes calldata _signature
     ) external onlyEnabled {
         require(records[_sn] == address(0), "record already exists");
-        bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _available, _frozen, _sn, address(this)));
+        require(_expired > block.timestamp, "request is expired");
+        bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _available, _frozen, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         records[_sn] = msg.sender;
@@ -185,10 +195,12 @@ contract Payment is Configable, Initializable {
         address _token, 
         uint _amount,
         bytes32 _sn,
+        uint _expired,
         bytes calldata _signature
     ) external onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
-        bytes32 messageHash = keccak256(abi.encodePacked(_token, _amount, _sn, address(this)));
+        require(_expired > block.timestamp, "request is expired");
+        bytes32 messageHash = keccak256(abi.encodePacked(_token, _amount, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         Account storage userAccount = userAccounts[msg.sender][_token];
@@ -204,10 +216,12 @@ contract Payment is Configable, Initializable {
         address _token, 
         uint _amount,
         bytes32 _sn,
+        uint _expired,
         bytes calldata _signature
     ) external onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
-        bytes32 messageHash = keccak256(abi.encodePacked(_token, _amount, _sn, address(this)));
+        require(_expired > block.timestamp, "request is expired");
+        bytes32 messageHash = keccak256(abi.encodePacked(_token, _amount, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         TradeData memory data = TradeData({
@@ -227,11 +241,13 @@ contract Payment is Configable, Initializable {
         bool _isWithdraw,
         TransferData calldata _deal,
         bytes32 _sn,
+        uint _expired,
         bytes calldata _signature
     ) external onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
+        require(_expired > block.timestamp, "request is expired");
         require(_deal.available + _deal.frozen == _deal.amount + _deal.fee && _deal.amount + _deal.fee > 0, "invalid deal");
-        bytes32 messageHash = keccak256(abi.encodePacked(_deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _sn, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         records[_sn] = msg.sender;
@@ -273,10 +289,12 @@ contract Payment is Configable, Initializable {
         TradeData calldata _userA,
         TradeData calldata _userB,
         bytes32 _sn,
+        uint _expired,
         bytes calldata _signature
     ) external onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
-        bytes32 messageHash = keccak256(abi.encodePacked(_sn, _userA.user, _userA.token, _userA.amount, _userA.fee, _userB.user, _userB.token, _userB.amount, _userB.fee, address(this)));
+        require(_expired > block.timestamp, "request is expired");
+        bytes32 messageHash = keccak256(abi.encodePacked(_sn, _userA.user, _userA.token, _userA.amount, _userA.fee, _userB.user, _userB.token, _userB.amount, _userB.fee, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         _unfreeze(_userA);

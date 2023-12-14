@@ -13,15 +13,13 @@ import "./ERC721/extensions/ERC165.sol";
 
 contract SBT is ERC165, Configable, Initializable {
     using Strings for uint;
-
+    uint id;
     string public name;
     string public symbol;
     bytes32 _domainHash;
     bool public enabled;
     address public signer;
 
-    // sn, token id
-    mapping(bytes32 => uint) public records;
     // token id, user address
     mapping(uint => address) public owners;
     // user address, token id
@@ -40,6 +38,11 @@ contract SBT is ERC165, Configable, Initializable {
     }
 
     function initialize(string memory _name, string memory _symbol) external initializer {
+        uint _id;
+        assembly {
+            _id := chainid()
+        }
+        id = _id;
         owner = msg.sender;
         signer = msg.sender;
         name = _name;
@@ -71,11 +74,13 @@ contract SBT is ERC165, Configable, Initializable {
         uint _tokenId, 
         uint _value,
         bytes32 _sn,
+        uint _expired,
         bytes calldata _signature
     ) external {
         require(_tokenId > 0, 'invalid token id');
+        require(_expired > block.timestamp, "request is expired");
         require(values[_tokenId] != _value, 'no change');
-        bytes32 messageHash = keccak256(abi.encodePacked(_tokenId, _value, _sn, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_tokenId, _value, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
 
         values[_tokenId] = _value;
@@ -85,16 +90,16 @@ contract SBT is ERC165, Configable, Initializable {
         uint _tokenId,
         uint _value,
         bytes32 _sn,
+        uint _expired,
         bytes calldata _signature
     ) external payable onlyEnabled returns(bool) {
         require(_tokenId > 0, 'invalid token id');
-        require(records[_sn] == 0, "record already exists");
-        require(owners[_tokenId] == address(0), "owner already exists");
-        bytes32 messageHash = keccak256(abi.encodePacked(_tokenId, _value, _sn, address(this)));
+        require(_expired > block.timestamp, "request is expired");
+        require(ids[msg.sender] == 0, "already claimed");
+        bytes32 messageHash = keccak256(abi.encodePacked(_tokenId, _value, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         emit ClaimLog(_sn, _tokenId, msg.sender);
         values[_tokenId] = _value;
-        records[_sn] = _tokenId;
         owners[_tokenId] = msg.sender;
         ids[msg.sender] = _tokenId;
         return true;
@@ -125,13 +130,6 @@ contract SBT is ERC165, Configable, Initializable {
             result[i] = ids[_users[i]];
         }
         return result;
-    }
-    
-    function getRecords(bytes32[] calldata _sns) external view returns (uint[] memory result) {
-        result = new uint[](_sns.length);
-        for (uint i; i<_sns.length; i++) {
-            result[i] = records[_sns[i]];
-        }
     }
 
     function getOwners(uint[] calldata _tokenIds) external view returns (address[] memory result) {

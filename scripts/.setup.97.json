@@ -31,13 +31,24 @@
     },
     {
         "call": true,
-        "called": false,
+        "called": true,
         "name": "AIOriginals",
         "functionName": "setupConfig",
         "contractName": "NFT",
         "contractAddr": "",
         "args": [
-			"${Config.address}"
+            "${Config.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": false,
+        "name": "AIOriginals",
+        "functionName": "setSigner",
+        "contractName": "NFT",
+        "contractAddr": "",
+        "args": [
+            "${signerWallet.address}"
         ]
     }
 ]

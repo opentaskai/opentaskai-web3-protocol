@@ -2,7 +2,6 @@ import { Wallet, BigNumber } from 'ethers'
 import { ethers, network, waffle } from 'hardhat'
 import { ERC20Token } from '../typechain/ERC20Token'
 import { Payment } from '../typechain/Payment'
-import { Config } from '../typechain/Config'
 import { expect } from './shared/expect'
 import { computeDomainSeparator } from './shared/signature-helper'
 import { paymentFixture, PaymentFixture, TradeData } from './shared/fixtures'
@@ -35,6 +34,7 @@ let payFix: PaymentFixture
 let tokenInstance: ERC20Token
 let tokenAddr: string
 let tokenName: string
+let expired = Math.floor(Date.now() / 1000) + 300;
 
 const uuid = () => {
   return v4().replace(/-/g, '');
@@ -139,6 +139,31 @@ const testCase = async (_tokenName:string = 'ETH') => {
       expect(userAccount.frozen).to.equal(BigNumber.from(0));
     });
 
+    it('depositAndFreeze fail', async () => {
+      let ownerBalance = await getBalance(owner);
+      LogConsole.debug('owner balance:', ownerBalance);
+
+      let userBalance = await getBalance(user1);
+      LogConsole.debug('user balance:', userBalance);
+
+      sn = uuid();
+      let param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, frozenAmount.div(2), frozenAmount, sn, expired);
+      LogConsole.debug('signDepositAndFreezeData param:', param);
+
+      await expect(payment.depositAndFreeze(param.to, param.token, param.amount.add(1), param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr))).to.be.revertedWith('invalid signature');
+      
+      await expect(payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr))).to.be.revertedWith('insufficient available');
+      
+      param = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, frozenAmount, frozenAmount, sn, expired);
+      if(tokenAddr === ZERO_ADDRESS) {
+        await expect(payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(1, tokenAddr))).to.be.revertedWith('invalid value');
+      }
+
+      param = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, 0, 0, sn, expired);
+      await expect(payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(0, tokenAddr))).to.be.revertedWith('zero');
+
+    });
+
     it('depositAndFreeze', async () => {
       let ownerBalance = await getBalance(owner);
       LogConsole.debug('owner balance:', ownerBalance);
@@ -147,22 +172,16 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('user balance:', userBalance);
 
       sn = uuid();
-      const param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, availableAmount, frozenAmount, sn);
+      const param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, depositAmount, frozenAmount, sn, expired);
       LogConsole.debug('signDepositAndFreezeData param:', param);
 
-      await expect(payment.depositAndFreeze(param.to, param.token, param.available.add(1), param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr))).to.be.revertedWith('invalid signature');
-      
-      if(tokenAddr === ZERO_ADDRESS) {
-        await expect(payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(1, tokenAddr))).to.be.revertedWith('invalid value');
-      }
-
-      let tx = await payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      let tx = await payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
       const receipt:any = await tx.wait()
       LogConsole.info('depositAndFreeze gasUsed:', receipt.gasUsed);
       LogConsole.debug('depositAndFreeze events:', receipt.events[0].args);
 
       expect(tx).to.emit(payment, 'DepositDetailLog')
-      .withArgs(param.sn, param.token, owner.address, param.to, param.available, param.frozen)
+      .withArgs(param.sn, param.token, owner.address, param.to, param.amount, param.frozen)
       
       let ownerBalance2 = await getBalance(owner);
       res = ownerBalance.sub(ownerBalance2)
@@ -177,10 +196,10 @@ const testCase = async (_tokenName:string = 'ETH') => {
 
       let userAccount = await payment.userAccounts(user1.address, tokenAddr);
       LogConsole.debug('userAccount:', userAccount);
-      expect(userAccount.available).to.equal(availableAmount)
+      expect(userAccount.available).to.equal(depositAmount.sub(frozenAmount))
       expect(userAccount.frozen).to.equal(frozenAmount);
       
-      await expect(payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr))).to.be.revertedWith('record already exists');
+      await expect(payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr))).to.be.revertedWith('record already exists');
 
     });
 
@@ -192,16 +211,16 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('user balance:', userBalance);
 
       
-      let param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, availableAmount, frozenAmount, uuid());
+      let param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
       LogConsole.debug('signDepositAndFreezeData param:', param);
-      await payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      await payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
       
-      param = await payFix.signWithdrawWithDetail(user1.address, tokenAddr, availableAmount, frozenAmount, uuid());
+      param = await payFix.signWithdrawWithDetail(user1.address, tokenAddr, availableAmount, frozenAmount, uuid(), expired);
       LogConsole.debug('signWithdrawWithDetail param:', param);
 
-      await expect(payment.connect(user1).withdrawWithDetail(payment.address, param.token, param.available, param.frozen, param.sn, param.sign.compact)).to.be.revertedWith('invalid signature');
+      await expect(payment.connect(user1).withdrawWithDetail(payment.address, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid signature');
 
-      let tx = await payment.connect(user1).withdrawWithDetail(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact);
+      let tx = await payment.connect(user1).withdrawWithDetail(param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact);
       const receipt:any = await tx.wait()
       LogConsole.info('withdrawWithDetail gasUsed:', receipt.gasUsed);
       LogConsole.debug('withdrawWithDetail events:', receipt.events[0].args);
@@ -217,21 +236,21 @@ const testCase = async (_tokenName:string = 'ETH') => {
         expect(userBalance2).to.equal(userBalance.add(param.available).add(param.frozen));
       }
       
-      await expect(payment.connect(user1).withdrawWithDetail(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact)).to.be.revertedWith('record already exists');
+      await expect(payment.connect(user1).withdrawWithDetail(param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
       
     });
 
     it('freeze', async () => {
       await payment.deposit(user1.address, tokenAddr, depositAmount, getPayOption(depositAmount, tokenAddr));
 
-      const param: any = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid());
+      const param: any = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid(), expired);
       LogConsole.debug('signFreezeData param:', param);
 
-      await expect(payment.connect(user1).freeze(param.token, param.amount.add(1), param.sn, param.sign.compact)).to.be.revertedWith('invalid signature');
+      await expect(payment.connect(user1).freeze(param.token, param.amount.add(1), param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid signature');
 
-      await expect(payment.freeze(param.token, param.amount, param.sn, param.sign.compact)).to.be.revertedWith('insufficient available');
+      await expect(payment.freeze(param.token, param.amount, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('insufficient available');
 
-      let tx = await payment.connect(user1).freeze(param.token, param.amount, param.sn, param.sign.compact);
+      let tx = await payment.connect(user1).freeze(param.token, param.amount, param.sn, param.expired, param.sign.compact);
       const receipt:any = await tx.wait()
       LogConsole.info('freeze gasUsed:', receipt.gasUsed);
       LogConsole.debug('freeze events:', receipt.events[0].args);
@@ -245,24 +264,24 @@ const testCase = async (_tokenName:string = 'ETH') => {
       expect(userAccount.available).to.equal(depositAmount.sub(frozenAmount));
       expect(userAccount.frozen).to.equal(frozenAmount);
 
-      await expect(payment.freeze(param.token, param.amount, param.sn, param.sign.compact)).to.be.revertedWith('record already exists');
+      await expect(payment.freeze(param.token, param.amount, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
 
     });
 
     it('unfreeze', async () => {
       await payment.deposit(user1.address, tokenAddr, depositAmount, getPayOption(depositAmount, tokenAddr));
 
-      let param: any = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid());
+      let param: any = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid(), expired);
       // LogConsole.debug('signFreezeData param:', param);
-      await payment.connect(user1).freeze(param.token, param.amount, param.sn, param.sign.compact);
+      await payment.connect(user1).freeze(param.token, param.amount, param.sn, param.expired, param.sign.compact);
 
-      param = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid());
+      param = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid(), expired);
 
-      await expect(payment.connect(user1).unfreeze(param.token, param.amount.add(1), param.sn, param.sign.compact)).to.be.revertedWith('invalid signature');
+      await expect(payment.connect(user1).unfreeze(param.token, param.amount.add(1), param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid signature');
 
-      await expect(payment.unfreeze(param.token, param.amount, param.sn, param.sign.compact)).to.be.revertedWith('insufficient frozen');
+      await expect(payment.unfreeze(param.token, param.amount, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('insufficient frozen');
 
-      let tx = await payment.connect(user1).unfreeze(param.token, param.amount, param.sn, param.sign.compact);
+      let tx = await payment.connect(user1).unfreeze(param.token, param.amount, param.sn, param.expired, param.sign.compact);
       const receipt:any = await tx.wait()
       LogConsole.info('unfreeze gasUsed:', receipt.gasUsed);
       LogConsole.debug('unfreeze events:', receipt.events[0].args);
@@ -275,7 +294,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       expect(userAccount.available).to.equal(depositAmount);
       expect(userAccount.frozen).to.equal(BigNumber.from(0));
 
-      await expect(payment.unfreeze(param.token, param.amount, param.sn, param.sign.compact)).to.be.revertedWith('record already exists');
+      await expect(payment.unfreeze(param.token, param.amount, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
 
     });
 
@@ -284,15 +303,15 @@ const testCase = async (_tokenName:string = 'ETH') => {
       const frozenTradeAmount = expandWithDecimals(1);
       
       // deposit and freeze for user1
-      let param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, availableAmount, frozenAmount, uuid());
-      await payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      let param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      await payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
 
       // deposit and freeze for user2
-      param = await payFix.signDepositAndFreezeData(user2.address, tokenAddr, availableAmount, frozenAmount, uuid());
-      await payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      param = await payFix.signDepositAndFreezeData(user2.address, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      await payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
 
       // preparing transfer data 
-      param = await payFix.signTransferData(tokenAddr, user1.address, user2.address, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, uuid());
+      param = await payFix.signTransferData(tokenAddr, user1.address, user2.address, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, uuid(), expired);
       LogConsole.debug('signTransferData:', param);
       const transferData = { ...param };
       delete transferData.sn;
@@ -302,27 +321,27 @@ const testCase = async (_tokenName:string = 'ETH') => {
       // test reverted with reason string 'invalid signature'
       let invalidDealData = { ... transferData };
       invalidDealData.token = payment.address;
-      await expect(payment.transfer(false, invalidDealData, param.sn, param.sign.compact)).to.be.revertedWith('invalid signature');
+      await expect(payment.transfer(false, invalidDealData, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid signature');
       
       // test reverted with reason string 'invalid deal'
       invalidDealData = { ... transferData };
       invalidDealData.available = invalidDealData.available.add(1);
-      await expect(payment.transfer(false, invalidDealData, param.sn, param.sign.compact)).to.be.revertedWith('invalid deal');
+      await expect(payment.transfer(false, invalidDealData, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid deal');
 
       let userAccount = await payment.userAccounts(user1.address, param.token);
       LogConsole.debug('userAccount:', userAccount);
 
       // test reverted with reason string 'insufficient available'
       await payment.connect(user1).withdraw(user1.address, param.token, userAccount.available);
-      await expect(payment.transfer(false, transferData, param.sn, param.sign.compact)).to.be.revertedWith('insufficient available');
+      await expect(payment.transfer(false, transferData, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('insufficient available');
       await payment.deposit(user1.address, tokenAddr, userAccount.available, getPayOption(userAccount.available, tokenAddr));
       
       // test reverted with reason string 'insufficient frozen'
-      const freezeParam = await payFix.signFreezeData(tokenAddr, userAccount.frozen, uuid());
-      await payment.connect(user1).unfreeze(freezeParam.token, freezeParam.amount, freezeParam.sn, freezeParam.sign.compact)
-      await expect(payment.transfer(false, transferData, param.sn, param.sign.compact)).to.be.revertedWith('insufficient frozen');
-      const unfreezeParam: any = await payFix.signFreezeData(tokenAddr, userAccount.frozen, uuid());
-      await payment.connect(user1).freeze(unfreezeParam.token, unfreezeParam.amount, unfreezeParam.sn, unfreezeParam.sign.compact);
+      const freezeParam = await payFix.signFreezeData(tokenAddr, userAccount.frozen, uuid(), expired);
+      await payment.connect(user1).unfreeze(freezeParam.token, freezeParam.amount, freezeParam.sn, freezeParam.expired, freezeParam.sign.compact)
+      await expect(payment.transfer(false, transferData, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('insufficient frozen');
+      const unfreezeParam: any = await payFix.signFreezeData(tokenAddr, userAccount.frozen, uuid(), expired);
+      await payment.connect(user1).freeze(unfreezeParam.token, unfreezeParam.amount, unfreezeParam.sn, unfreezeParam.expired, unfreezeParam.sign.compact);
       
     
       const user1AccountBefore = await payment.userAccounts(user1.address, param.token);
@@ -338,7 +357,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('paymentBalanceBefore:', paymentBalanceBefore);
       
       // test inner transfer
-      let tx = await payment.transfer(false, transferData, param.sn, param.sign.compact);
+      let tx = await payment.transfer(false, transferData, param.sn, param.expired, param.sign.compact);
       const receipt:any = await tx.wait()
       LogConsole.info('transfer gasUsed:', receipt.gasUsed);
       LogConsole.debug('transfer events:', receipt.events[0].args);
@@ -370,15 +389,15 @@ const testCase = async (_tokenName:string = 'ETH') => {
       const frozenTradeAmount = expandWithDecimals(1);
       
       // deposit and freeze for user1
-      let param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, availableAmount, frozenAmount, uuid());
-      await payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      let param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      await payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
 
       // deposit and freeze for user2
-      param = await payFix.signDepositAndFreezeData(user2.address, tokenAddr, availableAmount, frozenAmount, uuid());
-      await payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      param = await payFix.signDepositAndFreezeData(user2.address, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      await payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
 
       // preparing transfer data 
-      param = await payFix.signTransferData(tokenAddr, user1.address, user2.address, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, uuid());
+      param = await payFix.signTransferData(tokenAddr, user1.address, user2.address, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, uuid(), expired);
       LogConsole.debug('signTransferData:', param);
       const transferData = { ...param };
       delete transferData.sn;
@@ -399,7 +418,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('paymentBalanceBefore:', paymentBalanceBefore);
       
       // test transfer an withdraw
-      let tx = await payment.transfer(true, transferData, param.sn, param.sign.compact);
+      let tx = await payment.transfer(true, transferData, param.sn, param.expired, param.sign.compact);
       const receipt:any = await tx.wait()
       LogConsole.info('transfer gasUsed:', receipt.gasUsed);
       LogConsole.debug('transfer events:', receipt.events[0].args);
@@ -428,12 +447,12 @@ const testCase = async (_tokenName:string = 'ETH') => {
 
     it('cancel', async () => {
       // deposit and freeze for user1
-      let param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, availableAmount, frozenAmount, uuid());
-      await payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      let param: any = await payFix.signDepositAndFreezeData(user1.address, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      await payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
 
       // deposit and freeze for user2
-      param = await payFix.signDepositAndFreezeData(user2.address, tokenAddr, availableAmount, frozenAmount, uuid());
-      await payment.depositAndFreeze(param.to, param.token, param.available, param.frozen, param.sn, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      param = await payFix.signDepositAndFreezeData(user2.address, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      await payment.depositAndFreeze(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
 
       // preparing cancel data 
       const userA: TradeData = {
@@ -450,18 +469,18 @@ const testCase = async (_tokenName:string = 'ETH') => {
         fee: frozenAmount.div(2)
       }
 
-      param = await payFix.signCancelData(userA, userB, uuid());
+      param = await payFix.signCancelData(userA, userB, uuid(), expired);
       LogConsole.debug('signCancelData:', param);
 
       // test reverted with reason string 'invalid signature'
-      await expect(payment.cancel(param.userA, param.userA, param.sn, param.sign.compact)).to.be.revertedWith('invalid signature');
+      await expect(payment.cancel(param.userA, param.userA, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid signature');
       
       // test reverted with reason string 'insufficient frozen'
-      let freezeParam: any = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid());
-      await payment.connect(user1).unfreeze(freezeParam.token, freezeParam.amount, freezeParam.sn, freezeParam.sign.compact);
-      await expect(payment.cancel(param.userA, param.userB, param.sn, param.sign.compact)).to.be.revertedWith('insufficient frozen');
-      freezeParam = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid());
-      await payment.connect(user1).freeze(freezeParam.token, freezeParam.amount, freezeParam.sn, freezeParam.sign.compact);
+      let freezeParam: any = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid(), expired);
+      await payment.connect(user1).unfreeze(freezeParam.token, freezeParam.amount, freezeParam.sn, freezeParam.expired, freezeParam.sign.compact);
+      await expect(payment.cancel(param.userA, param.userB, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('insufficient frozen');
+      freezeParam = await payFix.signFreezeData(tokenAddr, frozenAmount, uuid(), expired);
+      await payment.connect(user1).freeze(freezeParam.token, freezeParam.amount, freezeParam.sn, freezeParam.expired, freezeParam.sign.compact);
       
       const user1AccountBefore = await payment.userAccounts(user1.address, tokenAddr);
       LogConsole.debug('user1AccountBefore:', user1AccountBefore);
@@ -476,7 +495,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('paymentBalanceBefore:', paymentBalanceBefore);
       
       // test cancel
-      let tx = await payment.cancel(param.userA, param.userB, param.sn, param.sign.compact);
+      let tx = await payment.cancel(param.userA, param.userB, param.sn, param.expired, param.sign.compact);
       const receipt:any = await tx.wait()
       LogConsole.info('cancel gasUsed:', receipt.gasUsed);
       LogConsole.debug('cancel events:', receipt.events[0].args);
@@ -501,7 +520,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       expect(feeToAccountAfter.frozen).to.equal(feeToAccountBefore.frozen);
       expect(paymentBalanceBefore).to.equal(paymentBalanceAfter);
 
-      await expect(payment.cancel(param.userA, param.userB, param.sn, param.sign.compact)).to.be.revertedWith('record already exists');
+      await expect(payment.cancel(param.userA, param.userB, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
           
       const records = await payment.getRecords([param.sn, freezeParam.sn])
       LogConsole.debug('records:', records);
@@ -569,7 +588,7 @@ describe('Payment', async () => {
     });
 
     it('verifyMessage false', async () => {
-      const param: any = await payFix.signFreezeData(usdt.address, expandWithDecimals(1000).toString(), uuid());
+      const param: any = await payFix.signFreezeData(usdt.address, expandWithDecimals(1000).toString(), uuid(), expired);
       LogConsole.debug('signFreezeData param:', param);
       res = await payment.verifyMessage(param.sn, param.sign.compact);
       LogConsole.info('verifyMessage for eoa res:', res);
@@ -577,7 +596,7 @@ describe('Payment', async () => {
     }); 
 
     it('verifyMessage for eoa', async () => {
-      let param: any = await payFix.signFreezeData(usdt.address, expandWithDecimals(1000).toString(), uuid());
+      let param: any = await payFix.signFreezeData(usdt.address, expandWithDecimals(1000).toString(), uuid(), expired);
       LogConsole.info('signFreezeData param:', param);
       res = await payment.verifyMessage(param.sign.messageHash, param.sign.compact);
       LogConsole.info('verifyMessage for eoa res:', res);
@@ -585,7 +604,7 @@ describe('Payment', async () => {
 
       const availableTradeAmount = expandWithDecimals(2);
       const frozenTradeAmount = expandWithDecimals(1);
-      param = await payFix.signTransferData(ZERO_ADDRESS, user1.address, user2.address, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, uuid());
+      param = await payFix.signTransferData(ZERO_ADDRESS, user1.address, user2.address, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, uuid(), expired);
       LogConsole.debug('signTransferData:', param);
       res = await payment.verifyMessage(param.sign.messageHash, param.sign.compact);
       LogConsole.info('verifyMessage2 for eoa res:', res);
@@ -603,7 +622,7 @@ describe('Payment', async () => {
       await payment.setSignerContract(signer.address, domainHash);
       LogConsole.info('domainHash:', domainHash);
 
-      const param: any = await payFix.signFreezeData(usdt.address, expandWithDecimals(1000).toString(), uuid(), domain);
+      const param: any = await payFix.signFreezeData(usdt.address, expandWithDecimals(1000).toString(), uuid(), expired, domain);
       LogConsole.info('signFreezeData param:', param);
       res = await payment.verifyMessage(param.sign.messageHash, param.sign.compact);
       LogConsole.info('verifyMessage for ca res:', res);
