@@ -16,7 +16,7 @@
     "verified": true
   },
   "feeWallet": {
-    "address": "0xBe46A6c57aB6d9272b5674C47fe587Dd3B5B54Db",
+    "address": "0x7E37439C329143d2eE327DfA672fbc178B2BDEC6",
     "constructorArgs": [],
     "upgradedAddress": "",
     "deployed": true,
@@ -46,24 +46,24 @@
   },
   "Payment": {
     "proxy": true,
-    "address": "0x9Aa6Ff7524C8bb7E78e9853713657FD678C8F3F7",
+    "address": "0x93Ca7fb4BA6d6Bb025c2C09af80291495a6Bf81F",
     "constructorArgs": [],
-    "upgradedAddress": "0x55bB4dAF3568055AD386fbcDa86d6a407961fB73",
+    "upgradedAddress": "0xE04eA37e021C24B98baa8F228Af03956a0F3558f",
     "deployed": true,
     "upgraded": true,
     "verified": true
   },
   "AIOriginals": {
     "proxy": true,
-    "address": "0xcEd30c85DECdAAa8c56233101162a2eaA2694BB2",
+    "address": "0x79504C748cfCFA64e0E12aA616e57ce535EA3707",
     "contractName": "NFT",
     "constructorArgs": [
       "OpenTaskAI Originals",
       "AIOriginals"
     ],
-    "upgradedAddress": "0x59422e6d2d5DBEA5255aF2336294863cFf255E38",
+    "upgradedAddress": "0x9528d71c2FcC0dF102b1d423A44C2DdFe8ccc58E",
     "deployed": true,
     "upgraded": true,
-    "verified": false
+    "verified": true
   }
 }
