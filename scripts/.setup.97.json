@@ -42,7 +42,7 @@
     },
     {
         "call": true,
-        "called": false,
+        "called": true,
         "name": "AIOriginals",
         "functionName": "setSigner",
         "contractName": "NFT",
