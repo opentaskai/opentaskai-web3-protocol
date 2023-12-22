@@ -32,7 +32,7 @@
     {
         "call": true,
         "called": true,
-        "name": "AIOriginals",
+        "name": "AIGenesis",
         "functionName": "setupConfig",
         "contractName": "NFT",
         "contractAddr": "",
@@ -43,12 +43,24 @@
     {
         "call": true,
         "called": true,
-        "name": "AIOriginals",
+        "name": "AIGenesis",
         "functionName": "setSigner",
         "contractName": "NFT",
         "contractAddr": "",
         "args": [
             "${signerWallet.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "name": "AIGenesis",
+        "functionName": "setURI",
+        "contractName": "NFT",
+        "contractAddr": "",
+        "args": [
+            "https://asset.opentaskai.com/nft/AIGenesis/97/",
+            ".json"
         ]
     }
 ]

@@ -120,6 +120,9 @@ describe('NFT', async () => {
       param = await nftFix.signMintData(uuid(), expired);
       await expect(nft.mint(param.sn, param.expired+1, param.sign.compact)).to.be.revertedWith('invalid signature');
 
+      param = await nftFix.signMintData(uuid(), expired);
+      await expect(nft.mint(param.sn, param.expired, param.sign.compact)).to.be.revertedWith('over claim limit');
+
     }); 
   });
   

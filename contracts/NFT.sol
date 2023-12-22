@@ -17,8 +17,10 @@ contract NFT is ERC721Enumerable, Configable, Initializable {
     address public signer;
     uint256 public claimLimit;
     mapping(address => uint256) public claimCount;
-    // sn, user
-    mapping(bytes32 => address) public records;
+    // sn, tokenId
+    mapping(bytes32 => uint256) public records;
+    // tokenId, sn
+    mapping(uint256 => bytes32) public record2s;
         
     event MintLog(address indexed _user, uint indexed _tokenId, bytes32 indexed _sn);
 
@@ -74,15 +76,17 @@ contract NFT is ERC721Enumerable, Configable, Initializable {
 
     function _claim(address _to, bytes32 _sn) internal 
     {
-        require(records[_sn] == address(0), "record already exists");
+        require(records[_sn] == 0, "record already exists");
+        require(claimCount[_to] < claimLimit, "over claim limit");
 
         uint tokenId = totalSupply();
-        ++tokenId;
+        tokenId += 1;
         require(tokenId < maxTotalSupply, "claim is over");
  
         emit MintLog(_to, tokenId, _sn);
 
-        records[_sn] = _to;
+        records[_sn] = tokenId;
+        record2s[tokenId] = _sn;
         claimCount[_to] += 1;
         _safeMint(_to, tokenId);
     }
@@ -112,6 +116,11 @@ contract NFT is ERC721Enumerable, Configable, Initializable {
         require(signer != _signer || _domainHash != _hash, 'No change');
         signer = _signer;
         _domainHash = _hash;
+    }
+
+    function changeNameAndSymbol(string memory _name, string memory _symbol) external onlyDev {
+        name = _name;
+        symbol = _symbol;
     }
 
     function verifyMessage(

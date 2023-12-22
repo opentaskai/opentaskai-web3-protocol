@@ -53,17 +53,17 @@
     "upgraded": true,
     "verified": true
   },
-  "AIOriginals": {
+  "AIGenesis": {
     "proxy": true,
-    "address": "0xb47768e196aDC31157027006352172610ccA4732",
+    "address": "0x3A2A916EbF8F84D3993B6D7d45b25C9acA8E2AA5",
     "contractName": "NFT",
     "constructorArgs": [
-      "OpenTaskAI Originals",
-      "AIOriginals"
+      "OpenTaskAI Genesis",
+      "AIGenesis"
     ],
-    "upgradedAddress": "0x213F822b6522AC26Db72Fe0Ef8C1581dcb073FA6",
+    "upgradedAddress": "",
     "deployed": true,
     "upgraded": true,
-    "verified": true
+    "verified": false
   }
 }
