@@ -112,6 +112,9 @@ describe('NFT', async () => {
       LogConsole.info('tokenIds:', res);
       expect(res[0]).to.equal(BigNumber.from(1));
 
+      res = await nft.record2s(res[0])
+      LogConsole.info('record2s:', res);
+
       await expect(nft.mint(param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
 
       param = await nftFix.signMintData(uuid(), 10000);
