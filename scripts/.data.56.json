@@ -1,28 +1,28 @@
 {
   "ownerWallet": {
-    "address": "",
+    "address": "0x57264278bAaEd8549C7968879A8dc878602D08Ce",
     "constructorArgs": [],
-    "upgradedAddress": "",
+    "upgradedAddress": "0x57264278bAaEd8549C7968879A8dc878602D08Ce",
     "deployed": true,
     "upgraded": true,
     "verified": true
   },
   "signerWallet": {
-    "address": "",
+    "address": "0x278bD24A8B65D34bBF0a5b0D4b5510C2135d8f84",
     "constructorArgs": [],
-    "upgradedAddress": "",
+    "upgradedAddress": "0x278bD24A8B65D34bBF0a5b0D4b5510C2135d8f84",
     "deployed": true,
     "upgraded": true,
     "verified": true
   },
   "feeWallet": {
-		"address": "",
-		"constructorArgs": [],
-		"upgradedAddress": "",
-		"deployed": true,
-		"upgraded": true,
-		"verified": true
-	},
+    "address": "0x7E37439C329143d2eE327DfA672fbc178B2BDEC6",
+    "constructorArgs": [],
+    "upgradedAddress": "0x7E37439C329143d2eE327DfA672fbc178B2BDEC6",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
+  },
   "USDT": {
     "address": "0x55d398326f99059fF775485246999027B3197955",
     "constructorArgs": [],
@@ -32,20 +32,24 @@
     "verified": true
   },
   "Config": {
-		"address": "",
-		"constructorArgs": [],
-		"upgradedAddress": "",
-		"deployed": false,
-		"upgraded": false,
-		"verified": false
-	},
-  "Payment": {
-    "proxy": true,
-    "address": "",
+    "address": "0x78e94233bD554f02c9A694a7eC30A929c36C5339",
     "constructorArgs": [],
     "upgradedAddress": "",
-    "deployed": false,
-    "upgraded": false,
+    "deployed": true,
+    "upgraded": true,
     "verified": false
+  },
+  "AIGenesis": {
+    "proxy": true,
+    "address": "0xD9C2Ff6DBD04A9Ed4d3EFdeD68Bd3766D16de26C",
+    "contractName": "NFT",
+    "constructorArgs": [
+      "OpenTaskAI Genesis",
+      "AIGenesis"
+    ],
+    "upgradedAddress": "0x902E16f763D00EA64D7B3FEbAB3202b5744E8b3f",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
   }
 }

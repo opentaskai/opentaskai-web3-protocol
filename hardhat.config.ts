@@ -94,7 +94,7 @@
        accounts: [data.PrivateKey]
      },
      bscmainnet: {
-       url: `https://binance.llamarpc.com`,
+       url: `https://bsc-dataseed.binance.org/`,
        accounts: [data.PrivateKey]
      },
      opbnbtestnet: {
