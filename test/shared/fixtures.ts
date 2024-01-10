@@ -10,8 +10,25 @@ import { TypedDataDomain } from "@ethersproject/abstract-signer"
 import { Signature } from "@ethersproject/bytes"
 import { expandWithDecimals } from './numberDecimals'
 import { LogConsole } from './logconsol'
+import { v4 } from 'uuid'
 
 let chainId = network.config.chainId ? network.config.chainId: 31337
+
+export function uuid() {
+    return v4().replace(/-/g, '');
+}
+
+export function hexToBytes32(val: string) {
+    if(val.substring(0,2) !== '0x') val = '0x'+val;
+    return ethers.utils.hexZeroPad(val, 32);
+}
+
+export function bytes32ToHex(val: string, has0x: boolean = false) {
+    if (val.substring(0, 2) !== '0x') val = '0x' + val;
+    let res = ethers.utils.hexStripZeros(val);
+    if (!has0x) res = res.substring(2);
+    return res;
+}
 
 async function erc20Contract(name: string, symbol: string, decimals: number): Promise<ERC20Token> {
     let factory = await ethers.getContractFactory('ERC20Token')
@@ -38,7 +55,7 @@ async function nftContract(): Promise<NFT> {
 }
 
 export interface TradeData {
-    user: string;
+    account: string;
     token: string;
     amount: (string | number | BigNumber);
     fee: (string | number | BigNumber);
@@ -49,7 +66,13 @@ export interface PaymentFixture {
     usdc: ERC20Token
     payment: Payment,
     config: Config,
-    signDepositAndFreezeData (
+    signBindAccountData (
+        account: string,
+        sn: string,
+        expired: (string | number | BigNumber),
+        domain?: TypedDataDomain
+    ): Promise<any>,
+    signDepositData (
         to: string,
         token: string,
         available: (string | number | BigNumber),
@@ -58,7 +81,7 @@ export interface PaymentFixture {
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
     ): Promise<any>,
-    signWithdrawWithDetail (
+    signWithdrawData (
         to: string,
         token: string,
         available: (string | number | BigNumber),
@@ -68,6 +91,7 @@ export interface PaymentFixture {
         domain?: TypedDataDomain
     ): Promise<any>,
     signFreezeData (
+        account: string,
         token: string,
         amount: (string | number | BigNumber),
         sn: string,
@@ -75,6 +99,7 @@ export interface PaymentFixture {
         domain?: TypedDataDomain
     ): Promise<any>,
     signTransferData (
+        out: string,
         token: string,
         from: string,
         to: string,
@@ -96,7 +121,7 @@ export interface PaymentFixture {
     
 }
 
-export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, signer, feeTo, user1, user2]: Wallet[]): Promise<PaymentFixture> {
+export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, signer, feeTo, user1, user2, user3]: Wallet[]): Promise<PaymentFixture> {
     const usdt = await erc20Contract("Test USDT", "USDT", 18)
     const usdc = await erc20Contract("Test USDC", "USDC", 18)
     await usdt.mint(owner.address, expandWithDecimals(10_000))
@@ -104,9 +129,11 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
 
     await usdt.mint(user1.address, expandWithDecimals(10_000))
     await usdt.mint(user2.address, expandWithDecimals(10_000))
+    await usdt.mint(user3.address, expandWithDecimals(10_000))
     
     await usdc.mint(user1.address, expandWithDecimals(10_000))
     await usdc.mint(user2.address, expandWithDecimals(10_000))
+    await usdc.mint(user3.address, expandWithDecimals(10_000))
     
     const config = await configContract()
 
@@ -120,8 +147,23 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
     await usdt.connect(owner).approve(payment.address, expandWithDecimals(10_000))
     await usdt.connect(user1).approve(payment.address, expandWithDecimals(10_000))
     await usdt.connect(user2).approve(payment.address, expandWithDecimals(10_000))
+    await usdt.connect(user3).approve(payment.address, expandWithDecimals(10_000))
 
-    const signDepositAndFreezeData = async (
+    const signBindAccountData = async (
+        account: string,
+        sn: string,
+        expired: (string | number | BigNumber),
+        domain?: TypedDataDomain
+    ): Promise<any> => {
+        account = hexToBytes32(account);
+        sn = hexToBytes32(sn);
+        const types = ['bytes32', 'bytes32', 'uint256', 'uint256', 'address'];
+        const values = [account, sn, expired, chainId, payment.address]
+        const sign = await signData(signer.address, types, values, domain);
+        return {account, sn, expired, sign};
+    }
+
+    const signDepositData = async (
         to: string,
         token: string,
         amount: (string | number | BigNumber),
@@ -130,14 +172,15 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
     ): Promise<any> => {
-        sn = ethers.utils.hexZeroPad('0x' + sn, 32);
-        const types = ['address', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
+        to = hexToBytes32(to);
+        sn = hexToBytes32(sn);
+        const types = ['bytes32', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
         const values = [to, token, amount, frozen, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {to, token, amount, frozen, sn, expired, sign};
     }
 
-    const signWithdrawWithDetail = async (
+    const signWithdrawData = async (
         to: string,
         token: string,
         available: (string | number | BigNumber),
@@ -146,7 +189,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
     ): Promise<any> => {
-        sn = ethers.utils.hexZeroPad('0x' + sn, 32);
+        sn = hexToBytes32(sn);
         const types = ['address', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
         const values = [to, token, available, frozen, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
@@ -154,20 +197,23 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
     }
 
     const signFreezeData = async (
+        account: string,
         token: string,
         amount: (string | number | BigNumber),
         sn: string,
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
     ): Promise<any> => {
-        sn = ethers.utils.hexZeroPad('0x' + sn, 32);
-        const types = ['address', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [token, amount, sn, expired, chainId, payment.address]
+        sn = hexToBytes32(sn);
+        account = hexToBytes32(account);
+        const types = ['bytes32', 'address', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
+        const values = [account, token, amount, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
-        return {token, amount, sn, expired, sign};
+        return {account, token, amount, sn, expired, sign};
     }
 
     const signTransferData = async (
+        out: string,
         token: string,
         from: string,
         to: string,
@@ -179,11 +225,13 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
     ): Promise<any> => {
-        sn = ethers.utils.hexZeroPad('0x' + sn, 32);
-        const types = ['address', 'address', 'address', 'uint256',  'uint256',  'uint256',  'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [token, from, to, available, frozen, amount, fee, sn, expired, chainId, payment.address]
+        sn = hexToBytes32(sn);
+        from = hexToBytes32(from);
+        to = hexToBytes32(to);
+        const types = ['address', 'address', 'bytes32', 'bytes32', 'uint256',  'uint256',  'uint256',  'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
+        const values = [out, token, from, to, available, frozen, amount, fee, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
-        return {token, from, to, available, frozen, amount, fee, sn, expired, sign};
+        return {out, token, from, to, available, frozen, amount, fee, sn, expired, sign};
     }
 
     const signCancelData = async (
@@ -193,14 +241,16 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
     ): Promise<any> => {
-        sn = ethers.utils.hexZeroPad('0x' + sn, 32);
-        const types = ['bytes32', 'address', 'address', 'uint256',  'uint256', 'address', 'address', 'uint256',  'uint256', 'uint256', 'uint256', 'address'];
-        const values = [sn, userA.user, userA.token, userA.amount, userA.fee, userB.user, userB.token, userB.amount, userB.fee, expired, chainId, payment.address]
+        sn = hexToBytes32(sn);
+        userA.account = hexToBytes32(userA.account);
+        userB.account = hexToBytes32(userB.account);
+        const types = ['bytes32', 'bytes32', 'address', 'uint256',  'uint256', 'bytes32', 'address', 'uint256',  'uint256', 'uint256', 'uint256', 'address'];
+        const values = [sn, userA.account, userA.token, userA.amount, userA.fee, userB.account, userB.token, userB.amount, userB.fee, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {userA, userB, sn, expired, sign};
     }
 
-    return { usdt, usdc, payment, config, signDepositAndFreezeData, signWithdrawWithDetail, signFreezeData, signTransferData, signCancelData }
+    return { usdt, usdc, payment, config, signBindAccountData, signDepositData, signWithdrawData, signFreezeData, signTransferData, signCancelData }
 }
 
 export interface NFTFixture {
@@ -226,7 +276,7 @@ export const nftFixture: Fixture<NFTFixture> = async function ([owner, signer, f
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
     ): Promise<any> => {
-        sn = ethers.utils.hexZeroPad('0x' + sn, 32);
+        sn = hexToBytes32(sn);
         const types = ['bytes32', 'uint256', 'uint256', 'address'];
         const values = [sn, expired, chainId, nft.address]
         const sign = await signData(signer.address, types, values, domain);

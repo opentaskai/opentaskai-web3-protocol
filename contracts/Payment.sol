@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "./lib/TransferHelper.sol";
 import "./lib/Signature.sol";
 import "./Configable.sol";
+import "./ReentrancyGuard.sol";
 
 struct Account {
     uint available;
@@ -20,7 +21,7 @@ struct AssetAccount {
 }
 
 struct DetailedAccount {
-    address user;
+    bytes32 account;
     address token;
     uint available;
     uint frozen;
@@ -28,45 +29,55 @@ struct DetailedAccount {
 
 struct TransferData {
     address token;
-    address from;
-    address to;
+    bytes32 from;
+    bytes32 to;
     uint available;
     uint frozen;
-    uint amount; //to 'address to'
-    uint fee; // to 'address feeTo'
+    uint amount; //to 'for the to'
+    uint fee; // to 'for the feeTo'
 }
 
 struct TradeData {
-    address user;
+    bytes32 account;
     address token;
     uint amount;
     uint fee;
 }
 
-contract Payment is Configable, Initializable {
+contract Payment is Configable, ReentrancyGuard, Initializable {
     using SafeMath for uint;
+    bytes32 NONE;
     uint id;
-    bytes32 _domainHash;
+    bytes32 domainHash;
 
     bool public enabled;
     bool public nosnEnabled;
     address public signer;
     address public feeTo;
+    bytes32 public feeToAccount;
 
-    // sn, user
+    // sn, account
     mapping(bytes32 => address) public records;
 
-    // user, token, account
-    mapping(address => mapping(address => Account)) public userAccounts;
+    bool public autoBindEnabled;
+    uint public maxWalletCount;
+    mapping(address => bytes32) public walletToAccount;
+    mapping(bytes32 => address[]) public walletsOfAccount;
 
-    event DepositLog(address indexed _user, address indexed _token, uint indexed _amount, address _from);
-    event WithdrawLog(address indexed _user, address indexed _token, uint indexed _amount, address _from);
-    event DepositDetailLog(bytes32 indexed _sn, address indexed _token, address _from, address _to, uint _amount, uint _frozen);
-    event WithdrawDetailLog(bytes32 indexed _sn, address indexed _token, address _from, address _to, uint _available, uint _frozen);
-    event FreezeLog(bytes32 indexed _sn, address indexed _token, uint _amount, address _user);
-    event UnfreezeLog(bytes32 indexed _sn, address indexed _token, uint _amount, address _user);
-    event CancelLog(bytes32 indexed _sn, TradeData _userA, TradeData _userB);
-    event TransferLog(bytes32 indexed _sn, address indexed _token, address _from, address _to, uint _available, uint _frozen, uint _amount, uint _fee);
+    // account, token, fund
+    mapping(bytes32 => mapping(address => Account)) public userAccounts;
+
+
+    event SimpleDepositLog(bytes32 indexed _to, address indexed _token, uint indexed _amount, address _operator);
+    event SimpleWithdrawLog(address indexed _token, uint indexed _amount, bytes32 _from, address _to, address _operator);
+    event DepositLog(bytes32 indexed _sn, address indexed _token, bytes32 _to, uint _amount, uint _frozen, address _operator);
+    event WithdrawLog(bytes32 indexed _sn, address indexed _token, bytes32 _from, address _to, uint _available, uint _frozen, address _operator);
+    event FreezeLog(bytes32 indexed _sn, bytes32 indexed _account, address indexed _token, uint _amount, address _operator);
+    event UnfreezeLog(bytes32 indexed _sn, bytes32 indexed _account, address indexed _token, uint _amount, address _operator);
+    event CancelLog(bytes32 indexed _sn, TradeData _userA, TradeData _userB, address _operator);
+    event TransferLog(bytes32 indexed _sn, TransferData _deal, address _out, address _operator);
+    event BindLog(bytes32 indexed _account, address indexed _operator);
+    event UnbindLog(bytes32 indexed _account, address indexed _operator);
     
     receive() external payable {
     }
@@ -90,26 +101,35 @@ contract Payment is Configable, Initializable {
         owner = msg.sender;
         signer = msg.sender;
         feeTo = msg.sender;
+        feeToAccount = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        _bingAccount(feeTo, feeToAccount);
 
-        _domainHash = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        NONE = 0x0000000000000000000000000000000000000000000000000000000000000000;
+        domainHash = NONE;
         enabled = true;
         nosnEnabled = false;
+        autoBindEnabled = true;
+        maxWalletCount = 1;
     }
 
-    function setSigner(address _user) external onlyDev {
-        require(signer != _user, 'no change');
-        signer = _user;
+    function setSigner(address _signer) external onlyDev {
+        require(signer != _signer, 'no change');
+        signer = _signer;
     }
 
     function setSignerContract(address _signer, bytes32 _hash) external onlyDev {
-        require(signer != _signer || _domainHash != _hash, 'No change');
+        require(signer != _signer || domainHash != _hash, 'No change');
         signer = _signer;
-        _domainHash = _hash;
+        domainHash = _hash;
     }
 
-    function setFeeTo(address _user) external onlyAdmin {
-        require(feeTo != _user, 'no change');
-        feeTo = _user;
+    function setFeeTo(address _feeTo) external onlyAdmin {
+        require(feeTo != _feeTo, 'no change');
+        walletToAccount[feeTo] = NONE;
+        walletsOfAccount[feeToAccount].pop();
+
+        feeTo = _feeTo;
+        _bingAccount(feeTo, feeToAccount);
     }
 
     function setEnabled(bool _enabled) external onlyDev {
@@ -120,9 +140,52 @@ contract Payment is Configable, Initializable {
         nosnEnabled = _enabled;
     }
 
-    function deposit(address _to, address _token, uint _amount) external payable onlyNosnEnabled returns(bool) {
-        emit DepositLog(_to, _token, _amount, msg.sender);
+    function setAutoBindEnabled(bool _enabled) external onlyDev {
+        autoBindEnabled = _enabled;
+    }
+
+    function setMaxWalletCount(uint _value) external onlyDev {
+        maxWalletCount = _value;
+    }
+
+    function _bingAccount(address _wallet, bytes32 _account) internal {
+        walletToAccount[_wallet] = _account;
+        walletsOfAccount[_account].push(_wallet);
+        emit BindLog(_account, _wallet);
+    }
+
+    function bindAccount(
+        bytes32 _account, 
+        bytes32 _sn,
+        uint _expired,
+        bytes calldata _signature
+    ) external onlyEnabled {
+        require(records[_sn] == address(0), "record already exists");
+        require(walletToAccount[msg.sender] == NONE, 'already bound');
+        require(walletsOfAccount[_account].length < maxWalletCount, 'over maxWalletCount');
+        require(_expired > block.timestamp, "request is expired");
+        bytes32 messageHash = keccak256(abi.encodePacked(_account, _sn, _expired, id, address(this)));
+        require(verifyMessage(messageHash, _signature), "invalid signature");
+
+        records[_sn] = msg.sender;
+        _bingAccount(msg.sender, _account);
+    }
+
+    function unbindAccount() external {
+        bytes32 account = walletToAccount[msg.sender];
+        require(account != NONE, 'no bound');
+        walletToAccount[msg.sender] = NONE;
+        uint index = indexAccount(account, msg.sender);
+        if(index < walletsOfAccount[account].length-1) {
+            walletsOfAccount[account][index] = walletsOfAccount[account][walletsOfAccount[account].length-1];
+        }
+        walletsOfAccount[account].pop();
+        emit UnbindLog(account, msg.sender);
+    }
+
+    function simpleDeposit(bytes32 _to, address _token, uint _amount) external payable nonReentrant onlyNosnEnabled returns(bool) {
         _deposit(_token, _amount);
+        emit SimpleDepositLog(_to, _token, _amount, msg.sender);
         
         Account storage userAccount = userAccounts[_to][_token];
         userAccount.available = userAccount.available.add(_amount);
@@ -130,43 +193,49 @@ contract Payment is Configable, Initializable {
         return true;
     }
 
-    function withdraw(address _to, address _token, uint _amount) external onlyNosnEnabled {
-        Account storage userAccount = userAccounts[msg.sender][_token];
+    function simpleWithdraw(address _to, address _token, uint _amount) external nonReentrant onlyNosnEnabled {
+        bytes32 from = walletToAccount[msg.sender];
+        Account storage userAccount = userAccounts[from][_token];
         userAccount.available = userAccount.available.sub(_amount, 'insufficient available');
-
-        emit WithdrawLog(_to, _token, _amount, msg.sender);
+        
         _withdraw(_to, _token, _amount);
+        emit SimpleWithdrawLog(_token, _amount, from, _to, msg.sender);
     }
 
-    function depositAndFreeze(
-        address _to, 
+    function deposit(
+        bytes32 _to, 
         address _token, 
         uint _amount, // deposit amount
         uint _frozen,
         bytes32 _sn,
         uint _expired,
         bytes calldata _signature
-    ) external payable onlyEnabled returns(bool) {
+    ) external payable nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
         bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _amount, _frozen, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
+        
+        if (autoBindEnabled && walletsOfAccount[_to].length == 0) {
+            _bingAccount(msg.sender, _to);
+        }
+        require(walletsOfAccount[_to].length >0,  "no bind");
+        
+        records[_sn] = msg.sender;
+        _deposit(_token, _amount);
+
         Account storage userAccount = userAccounts[_to][_token];
         uint available = userAccount.available.add(_amount);
         require(available >= _frozen, "insufficient available");
         
-        emit DepositDetailLog(_sn, _token, msg.sender, _to, _amount, _frozen);
-
-        _deposit(_token, _amount);
-
-        records[_sn] = msg.sender;
         userAccount.available = available.sub(_frozen);
         userAccount.frozen = userAccount.frozen.add(_frozen);
-
+        
+        emit DepositLog(_sn, _token, _to, _amount, _frozen, msg.sender);
         return true;
     }
 
-    function withdrawWithDetail(
+    function withdraw(
         address _to, 
         address _token, 
         uint _available, 
@@ -174,58 +243,66 @@ contract Payment is Configable, Initializable {
         bytes32 _sn,
         uint _expired,
         bytes calldata _signature
-    ) external onlyEnabled {
+    ) external nonReentrant onlyEnabled {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
         bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _available, _frozen, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         records[_sn] = msg.sender;
-
-        Account storage userAccount = userAccounts[msg.sender][_token];
+        bytes32 from = walletToAccount[msg.sender];
+        Account storage userAccount = userAccounts[from][_token];
         userAccount.available = userAccount.available.sub(_available, 'insufficient available');
         userAccount.frozen = userAccount.frozen.sub(_frozen, 'insufficient frozen');
         
-        emit WithdrawDetailLog(_sn, _token, msg.sender, _to, _available, _frozen);
-
         _withdraw(_to, _token, _available + _frozen);
+        emit WithdrawLog(_sn, _token, from, _to, _available, _frozen, msg.sender);
     }
 
     function freeze(
+        bytes32 _account,
         address _token, 
         uint _amount,
         bytes32 _sn,
         uint _expired,
         bytes calldata _signature
-    ) external onlyEnabled returns(bool) {
+    ) external nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_token, _amount, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        
-        Account storage userAccount = userAccounts[msg.sender][_token];
+        bytes32 opetratorAccount = walletToAccount[msg.sender];
+        if (opetratorAccount != _account && msg.sender != admin()) {
+            revert("forbidden");
+        }
+        Account storage userAccount = userAccounts[_account][_token];
         userAccount.available = userAccount.available.sub(_amount, 'insufficient available');
         userAccount.frozen = userAccount.frozen.add(_amount);
 
         records[_sn] = msg.sender;
-        emit FreezeLog(_sn, _token, _amount, msg.sender);
+        emit FreezeLog(_sn, _account, _token, _amount, msg.sender);
         return true;
     }
 
     function unfreeze(
+        bytes32 _account,
         address _token, 
         uint _amount,
         bytes32 _sn,
         uint _expired,
         bytes calldata _signature
-    ) external onlyEnabled returns(bool) {
+    ) external nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_token, _amount, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
+        bytes32 opetratorAccount = walletToAccount[msg.sender];
+        if (opetratorAccount != _account && msg.sender != admin()) {
+            revert("forbidden");
+        }
         
         TradeData memory data = TradeData({
-            user: msg.sender,
+            account: _account,
             token: _token,
             amount: _amount,
             fee: 0
@@ -233,26 +310,30 @@ contract Payment is Configable, Initializable {
         _unfreeze(data);
 
         records[_sn] = msg.sender;
-        emit UnfreezeLog(_sn, _token, _amount, msg.sender);
+        emit UnfreezeLog(_sn, _account, _token, _amount, msg.sender);
         return true;
     }
 
     function transfer(
-        bool _isWithdraw,
+        address _out,
         TransferData calldata _deal,
         bytes32 _sn,
         uint _expired,
         bytes calldata _signature
-    ) external onlyEnabled returns(bool) {
+    ) external nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
         require(_deal.available + _deal.frozen == _deal.amount + _deal.fee && _deal.amount + _deal.fee > 0, "invalid deal");
-        bytes32 messageHash = keccak256(abi.encodePacked(_deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_out, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
+        bool isFrom = foundAccount(_deal.from, msg.sender);
+        bool isTo = foundAccount(_deal.to, msg.sender);
+        if( !(isFrom || isTo) && msg.sender != admin()) {
+            revert("forbidden");
+        }
         
         records[_sn] = msg.sender;
-        emit TransferLog(_sn, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee);
-
+        
         Account storage fromAccount = userAccounts[_deal.from][_deal.token];
 
         if(_deal.available > 0) {
@@ -263,9 +344,9 @@ contract Payment is Configable, Initializable {
             fromAccount.frozen = fromAccount.frozen.sub(_deal.frozen, 'insufficient frozen');
         }
 
-        if(_isWithdraw) {
+        if(_out != address(0)) {
             if(_deal.amount > 0) {
-                _withdraw(_deal.to, _deal.token, _deal.amount);
+                _withdraw(_out, _deal.token, _deal.amount);
             }
             if(_deal.fee > 0) {
                 _withdraw(feeTo, _deal.token, _deal.fee);
@@ -277,11 +358,12 @@ contract Payment is Configable, Initializable {
             }
 
             if(_deal.fee > 0) {
-                Account storage feeAccount = userAccounts[feeTo][_deal.token];
+                Account storage feeAccount = userAccounts[feeToAccount][_deal.token];
                 feeAccount.available = feeAccount.available.add(_deal.fee);
             }
         }
         
+        emit TransferLog(_sn, _deal, _out, msg.sender);
         return true;
     }
 
@@ -291,27 +373,32 @@ contract Payment is Configable, Initializable {
         bytes32 _sn,
         uint _expired,
         bytes calldata _signature
-    ) external onlyEnabled returns(bool) {
+    ) external nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_sn, _userA.user, _userA.token, _userA.amount, _userA.fee, _userB.user, _userB.token, _userB.amount, _userB.fee, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_sn, _userA.account, _userA.token, _userA.amount, _userA.fee, _userB.account, _userB.token, _userB.amount, _userB.fee, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        
+        bool a = foundAccount(_userA.account, msg.sender);
+        bool b = foundAccount(_userB.account, msg.sender);
+        if( !(a || b) && msg.sender != admin()) {
+            revert("forbidden");
+        }
+
         _unfreeze(_userA);
         _unfreeze(_userB);
         
         records[_sn] = msg.sender;
-        emit CancelLog(_sn, _userA, _userB);
+        emit CancelLog(_sn, _userA, _userB, msg.sender);
         return true;
     }
 
     function _unfreeze(TradeData memory _data) internal {
-        Account storage userAccount = userAccounts[_data.user][_data.token];
+        Account storage userAccount = userAccounts[_data.account][_data.token];
         userAccount.frozen = userAccount.frozen.sub(_data.amount, 'insufficient frozen');
         userAccount.available = userAccount.available.add(_data.amount.sub(_data.fee, 'fee > amount'));
 
         if(_data.fee > 0) {
-            Account storage feeAccount = userAccounts[feeTo][_data.token];
+            Account storage feeAccount = userAccounts[feeToAccount][_data.token];
             feeAccount.available = feeAccount.available.add(_data.fee);
         }
     }
@@ -355,18 +442,18 @@ contract Payment is Configable, Initializable {
         bytes calldata _signature
     ) public view returns (bool) {
         bytes32 hash;
-        if(_domainHash == 0x0000000000000000000000000000000000000000000000000000000000000000) {
+        if(domainHash == 0x0000000000000000000000000000000000000000000000000000000000000000) {
             hash = keccak256(abi.encodePacked("\x19Ethereum Signed Message:\n32", _messageHash));
         } else {
-            hash = keccak256(abi.encodePacked("\x19\x01", _domainHash, _messageHash));
+            hash = keccak256(abi.encodePacked("\x19\x01", domainHash, _messageHash));
         }
         return Signature.verify(hash, signer, _signature);
     }
 
-    function getUserAssets(address _user, address[] calldata _tokens) external view returns (AssetAccount[] memory result) {
+    function getUserAssets(bytes32 _account, address[] calldata _tokens) external view returns (AssetAccount[] memory result) {
         result = new AssetAccount[](_tokens.length);
         for (uint i; i<_tokens.length; i++) {
-            Account memory userAccount = userAccounts[_user][_tokens[i]];
+            Account memory userAccount = userAccounts[_account][_tokens[i]];
             result[i] = AssetAccount({
                 token: _tokens[i],
                 available: userAccount.available,
@@ -376,13 +463,13 @@ contract Payment is Configable, Initializable {
         return result;
     }
 
-    function getMultiUserAssets(address[] calldata _users, address[] memory _tokens) external view returns (DetailedAccount[] memory result) {
-        require(_users.length == _tokens.length, 'invalid parameters');
+    function getMultiUserAssets(bytes32[] calldata _accounts, address[] memory _tokens) external view returns (DetailedAccount[] memory result) {
+        require(_accounts.length == _tokens.length, 'invalid parameters');
         result = new DetailedAccount[](_tokens.length);
         for (uint i; i<_tokens.length; i++) {
-            Account memory userAccount = userAccounts[_users[i]][_tokens[i]];
+            Account memory userAccount = userAccounts[_accounts[i]][_tokens[i]];
             result[i] = DetailedAccount({
-                user: _users[i],
+                account: _accounts[i],
                 token: _tokens[i],
                 available: userAccount.available,
                 frozen: userAccount.frozen
@@ -396,5 +483,21 @@ contract Payment is Configable, Initializable {
         for (uint i; i<_sns.length; i++) {
             result[i] = records[_sns[i]];
         }
+    }
+
+    function foundAccount(bytes32 _account, address _wallet) public view returns (bool) {
+        uint index = indexAccount(_account, _wallet);
+        if(index != walletsOfAccount[_account].length) return true;
+        return false;
+    }
+
+    function indexAccount(bytes32 _account, address _wallet) internal view returns (uint) {
+        uint index = walletsOfAccount[_account].length;
+        for(uint i; i < walletsOfAccount[_account].length; i++) {
+            if(_wallet == walletsOfAccount[_account][i]) {
+                index = i;
+            }
+        }
+        return index;
     }
 }
