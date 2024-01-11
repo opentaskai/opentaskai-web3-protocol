@@ -2,8 +2,7 @@
 pragma solidity ^0.8.11;
 
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "./interfaces/IERC20.sol";
 import "./lib/TransferHelper.sol";
 import "./lib/Signature.sol";
 import "./Configable.sol";
@@ -33,7 +32,7 @@ struct TransferData {
     bytes32 to;
     uint available;
     uint frozen;
-    uint amount; //to 'for the to'
+    uint amount; //to 'for the receiver(to)'
     uint fee; // to 'for the feeTo'
 }
 
@@ -45,7 +44,6 @@ struct TradeData {
 }
 
 contract Payment is Configable, ReentrancyGuard, Initializable {
-    using SafeMath for uint;
     bytes32 NONE;
     uint id;
     bytes32 domainHash;
@@ -109,7 +107,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         signer = msg.sender;
         feeTo = msg.sender;
         feeToAccount = 0x0000000000000000000000000000000000000000000000000000000000000001;
-        _bingAccount(feeTo, feeToAccount);
+        _bindAccount(feeTo, feeToAccount);
     }
 
     function setSigner(address _signer) external onlyDev {
@@ -129,7 +127,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         walletsOfAccount[feeToAccount].pop();
 
         feeTo = _feeTo;
-        _bingAccount(feeTo, feeToAccount);
+        _bindAccount(feeTo, feeToAccount);
     }
 
     function setEnabled(bool _enabled) external onlyDev {
@@ -148,7 +146,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         maxWalletCount = _value;
     }
 
-    function _bingAccount(address _wallet, bytes32 _account) internal {
+    function _bindAccount(address _wallet, bytes32 _account) internal {
         require(walletsOfAccount[_account].length < maxWalletCount, 'over wallet count');
         walletToAccount[_wallet] = _account;
         walletsOfAccount[_account].push(_wallet);
@@ -168,7 +166,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         bytes32 messageHash = keccak256(abi.encodePacked(_account, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
-        _bingAccount(msg.sender, _account);
+        _bindAccount(msg.sender, _account);
         records[_sn] = msg.sender;
     }
 
@@ -189,7 +187,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         emit SimpleDepositLog(_to, _token, _amount, msg.sender);
         
         Account storage userAccount = userAccounts[_to][_token];
-        userAccount.available = userAccount.available.add(_amount);
+        userAccount.available = userAccount.available + _amount;
 
         return true;
     }
@@ -197,7 +195,8 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     function simpleWithdraw(address _to, address _token, uint _amount) external nonReentrant onlyNosnEnabled {
         bytes32 from = walletToAccount[msg.sender];
         Account storage userAccount = userAccounts[from][_token];
-        userAccount.available = userAccount.available.sub(_amount, 'insufficient available');
+        require(userAccount.available >= _amount, 'insufficient available');
+        userAccount.available = userAccount.available - _amount;
         
         _withdraw(_to, _token, _amount);
         emit SimpleWithdrawLog(_token, _amount, from, _to, msg.sender);
@@ -218,7 +217,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         if (autoBindEnabled && walletsOfAccount[_to].length == 0) {
-            _bingAccount(msg.sender, _to);
+            _bindAccount(msg.sender, _to);
         }
         require(walletsOfAccount[_to].length >0,  "no bind");
         
@@ -226,11 +225,11 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         _deposit(_token, _amount);
 
         Account storage userAccount = userAccounts[_to][_token];
-        uint available = userAccount.available.add(_amount);
+        uint available = userAccount.available + _amount;
         require(available >= _frozen, "insufficient available");
         
-        userAccount.available = available.sub(_frozen);
-        userAccount.frozen = userAccount.frozen.add(_frozen);
+        userAccount.available = available - _frozen;
+        userAccount.frozen = userAccount.frozen + _frozen;
         
         emit DepositLog(_sn, _token, _to, _amount, _frozen, msg.sender);
         return true;
@@ -253,8 +252,10 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         records[_sn] = msg.sender;
         bytes32 from = walletToAccount[msg.sender];
         Account storage userAccount = userAccounts[from][_token];
-        userAccount.available = userAccount.available.sub(_available, 'insufficient available');
-        userAccount.frozen = userAccount.frozen.sub(_frozen, 'insufficient frozen');
+        require(userAccount.available >= _available, 'insufficient available');
+        require(userAccount.frozen >= _frozen, 'insufficient frozen');
+        userAccount.available = userAccount.available - _available;
+        userAccount.frozen = userAccount.frozen - _frozen;
         
         _withdraw(_to, _token, _available + _frozen);
         emit WithdrawLog(_sn, _token, from, _to, _available, _frozen, msg.sender);
@@ -272,13 +273,14 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(_expired > block.timestamp, "request is expired");
         bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        bytes32 opetratorAccount = walletToAccount[msg.sender];
-        if (opetratorAccount != _account && msg.sender != admin()) {
+        bytes32 operatorAccount = walletToAccount[msg.sender];
+        if (operatorAccount != _account && msg.sender != admin()) {
             revert("forbidden");
         }
         Account storage userAccount = userAccounts[_account][_token];
-        userAccount.available = userAccount.available.sub(_amount, 'insufficient available');
-        userAccount.frozen = userAccount.frozen.add(_amount);
+        require(userAccount.available >= _amount, 'insufficient available');
+        userAccount.available = userAccount.available - _amount;
+        userAccount.frozen = userAccount.frozen + _amount;
 
         records[_sn] = msg.sender;
         emit FreezeLog(_sn, _account, _token, _amount, msg.sender);
@@ -297,8 +299,8 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(_expired > block.timestamp, "request is expired");
         bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        bytes32 opetratorAccount = walletToAccount[msg.sender];
-        if (opetratorAccount != _account && msg.sender != admin()) {
+        bytes32 operatorAccount = walletToAccount[msg.sender];
+        if (operatorAccount != _account && msg.sender != admin()) {
             revert("forbidden");
         }
         
@@ -338,11 +340,13 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         Account storage fromAccount = userAccounts[_deal.from][_deal.token];
 
         if(_deal.available > 0) {
-            fromAccount.available = fromAccount.available.sub(_deal.available, 'insufficient available');
+            require(fromAccount.available >= _deal.available, 'insufficient available');
+            fromAccount.available = fromAccount.available - _deal.available;
         }
 
         if(_deal.frozen > 0) {
-            fromAccount.frozen = fromAccount.frozen.sub(_deal.frozen, 'insufficient frozen');
+            require(fromAccount.frozen >= _deal.frozen, 'insufficient frozen');
+            fromAccount.frozen = fromAccount.frozen - _deal.frozen;
         }
 
         if(_out != address(0)) {
@@ -355,12 +359,12 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         } else {
             if(_deal.amount > 0) {
                 Account storage toAccount = userAccounts[_deal.to][_deal.token];
-                toAccount.available = toAccount.available.add(_deal.amount);
+                toAccount.available = toAccount.available + _deal.amount;
             }
 
             if(_deal.fee > 0) {
                 Account storage feeAccount = userAccounts[feeToAccount][_deal.token];
-                feeAccount.available = feeAccount.available.add(_deal.fee);
+                feeAccount.available = feeAccount.available + _deal.fee;
             }
         }
         
@@ -395,16 +399,18 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
 
     function _unfreeze(TradeData memory _data) internal {
         Account storage userAccount = userAccounts[_data.account][_data.token];
-        userAccount.frozen = userAccount.frozen.sub(_data.amount, 'insufficient frozen');
-        userAccount.available = userAccount.available.add(_data.amount.sub(_data.fee, 'fee > amount'));
+        require(userAccount.frozen >= _data.amount, 'insufficient frozen');
+        require(_data.amount >= _data.fee, 'fee > amount');
+        userAccount.frozen = userAccount.frozen - _data.amount;
+        userAccount.available = userAccount.available + _data.amount - _data.fee;
 
         if(_data.fee > 0) {
             Account storage feeAccount = userAccounts[feeToAccount][_data.token];
-            feeAccount.available = feeAccount.available.add(_data.fee);
+            feeAccount.available = feeAccount.available + _data.fee;
         }
     }
 
-    function _deposit(address _token, uint _amount) internal onlyEnabled returns(uint) {
+    function _deposit(address _token, uint _amount) internal returns(uint) {
         require(_amount > 0, 'zero');
         if(_token == address(0)) {
             require(_amount == msg.value, 'invalid value');

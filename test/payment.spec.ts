@@ -222,6 +222,17 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('user3Account:', userAccount);
       expect(userAccount.available).to.equal(depositAmount.sub(frozenAmount))
       expect(userAccount.frozen).to.equal(frozenAmount);
+
+      res = await payment.getUserAssets(user3Account, [tokenAddr]);
+      LogConsole.debug('getUserAssets:', res);
+      expect(res.length).to.equal(1);
+      expect(userAccount.available).to.equal(res[0].available)
+      expect(userAccount.frozen).to.equal(res[0].frozen);
+
+      res = await payment.getMultiUserAssets([user1Account, user3Account], [tokenAddr, tokenAddr]);
+      LogConsole.debug('getMultiUserAssets:', res);
+      expect(res.length).to.equal(2);
+
     });
 
     it('withdraw', async () => {
@@ -641,9 +652,19 @@ const testBase = async () => {
       res = await payment.owner();
       expect(res).to.equal(owner.address);
 
+      res = await payment.getWalletsOfAccount(feeToAccount);
+      LogConsole.info('getWalletsOfAccount:', res);
+      expect(res.length).to.equal(1);
+      expect(res[0]).to.equal(feeTo.address);
+      
       await payment.setFeeTo(owner.address);
       res = await payment.feeTo();
       expect(res).to.equal(owner.address);
+
+      res = await payment.getWalletsOfAccount(feeToAccount);
+      LogConsole.info('getWalletsOfAccount:', res);
+      expect(res.length).to.equal(1);
+      expect(res[0]).to.equal(owner.address);
 
     });
 
@@ -754,8 +775,8 @@ describe('Payment', async () => {
   
   await testBase();
 
-  // await testCase();
+  await testCase();
 
-  // await testCase('usdt');
+  await testCase('usdt');
   
 })

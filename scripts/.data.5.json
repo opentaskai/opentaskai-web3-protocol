@@ -39,16 +39,16 @@
   "Config": {
     "address": "0xF76e44665b9c20b912C57D0BfF425E74FBdeB658",
     "constructorArgs": [],
-    "upgradedAddress": "",
+    "upgradedAddress": "0xF76e44665b9c20b912C57D0BfF425E74FBdeB658",
     "deployed": true,
     "upgraded": true,
-    "verified": false
+    "verified": true
   },
   "Payment": {
     "proxy": true,
-    "address": "0x93Ca7fb4BA6d6Bb025c2C09af80291495a6Bf81F",
+    "address": "0x539b12d3780C2A8527b6Bda0FE916A1c9698eB8B",
     "constructorArgs": [],
-    "upgradedAddress": "0xE04eA37e021C24B98baa8F228Af03956a0F3558f",
+    "upgradedAddress": "0x3858705aeCB29DcD597C40d17712f4E708396e84",
     "deployed": true,
     "upgraded": true,
     "verified": true
