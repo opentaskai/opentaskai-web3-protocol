@@ -46,9 +46,9 @@
   },
   "Payment": {
     "proxy": true,
-    "address": "0xdb188157871232D3E791B766ecFB4855086097aE",
+    "address": "0x3858705aeCB29DcD597C40d17712f4E708396e84",
     "constructorArgs": [],
-    "upgradedAddress": "0x1543801d43402eb941199EF3615283C72745e7b8",
+    "upgradedAddress": "0x17BFc7cFdA027a7357c9Cde294dE45C4333A1a86",
     "deployed": true,
     "upgraded": true,
     "verified": true
