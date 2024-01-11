@@ -31,10 +31,10 @@
       "USDT",
       6
     ],
-    "upgradedAddress": "",
+    "upgradedAddress": "0xbA27D2ff0eD0e3914C129606DE2f8cD25c659b5d",
     "deployed": true,
     "upgraded": true,
-    "verified": false
+    "verified": true
   },
   "Config": {
     "address": "0xF76e44665b9c20b912C57D0BfF425E74FBdeB658",
