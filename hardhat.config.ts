@@ -72,7 +72,7 @@
    solidity: {
      compilers: [DEFAULT_COMPILER_SETTINGS],
      overrides: {
-       'contracts/HeroManage.sol': LOWER_OPTIMIZER_COMPILER_SETTINGS,
+       'contracts/Payment.sol': LOWER_OPTIMIZER_COMPILER_SETTINGS,
      },
    },
    networks: {

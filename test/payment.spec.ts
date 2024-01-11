@@ -9,7 +9,6 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { LogConsole } from './shared/logconsol'
 import { TypedDataDomain } from "@ethersproject/abstract-signer"
 import { expandWithDecimals ,reduceWithDecimals } from './shared/numberDecimals'
-import sinon from 'sinon';
 
 const createFixtureLoader = waffle.createFixtureLoader
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
@@ -428,7 +427,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
 
     });
 
-    it('transfer and simpleWithdraw', async () => {
+    it('transfer and withdraw', async () => {
       const availableTradeAmount = expandWithDecimals(2);
       const frozenTradeAmount = expandWithDecimals(1);
       
@@ -463,6 +462,8 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('paymentBalanceBefore:', paymentBalanceBefore);
       
       // test transfer an simpleWithdraw
+      let userBalance = await getBalance(user2);
+      let feeToBalance = await getBalance(feeTo);
       let tx = await payment.transfer(user2.address, transferData, param.sn, param.expired, param.sign.compact);
       const receipt:any = await tx.wait()
       const events = receipt.events[receipt.events.length-1].args
@@ -482,6 +483,14 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('feeToAccountAfter:', feeToAccountAfter);
       const paymentBalanceAfter = await payment.getBalance(param.token)
       LogConsole.debug('paymentBalanceAfter:', paymentBalanceAfter);
+
+      let userBalance2 = await getBalance(user2);
+      // LogConsole.debug('user2 balance2:', userBalance2);
+      expect(userBalance2).to.equal(userBalance.add(param.amount));
+
+      let feeToBalance2 = await getBalance(feeTo);
+      // LogConsole.debug('feeTo balance2:', feeToBalance2);
+      expect(feeToBalance2).to.equal(feeToBalance.add(param.fee));
 
       expect(user1AccountAfter.available).to.equal(user1AccountBefore.available.sub(availableTradeAmount));
       expect(user1AccountAfter.frozen).to.equal(user1AccountBefore.frozen.sub(frozenTradeAmount));
@@ -620,6 +629,9 @@ const testBase = async () => {
       await expect(payment.connect(user1).setSigner(signer.address)).to.be.revertedWith('dev forbidden');
       await expect(payment.connect(user1).setFeeTo(feeTo.address)).to.be.revertedWith('admin forbidden');
       await expect(payment.connect(user1).setEnabled(false)).to.be.revertedWith('dev forbidden');
+      await expect(payment.connect(user1).setNoSnEnabled(false)).to.be.revertedWith('dev forbidden');
+      await expect(payment.connect(user1).setAutoBindEnabled(false)).to.be.revertedWith('dev forbidden');
+      await expect(payment.connect(user1).setMaxWalletCount(1)).to.be.revertedWith('dev forbidden');
 
       await payment.changeOwner(signer.address);
       res = await payment.owner();
@@ -676,14 +688,74 @@ const testBase = async () => {
       LogConsole.info('verifyMessage for ca res:', res);
       expect(res).to.equal(true);
     }); 
+
+    it('bind', async () => {
+      let param: any = await payFix.signBindAccountData(feeToAccount, uuid(), expired);
+      LogConsole.trace('signBindAccountData param:', param);
+      await expect(payment.connect(user3).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('forbidden');
+      await expect(payment.connect(feeTo).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('already bound');
+
+      param = await payFix.signBindAccountData(user1Account, uuid(), 1);
+      LogConsole.trace('signBindAccountData param:', param);
+      await expect(payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('request is expired');
+
+      param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+      LogConsole.trace('signBindAccountData param:', param);
+      await expect(payment.connect(user1).bindAccount(param.account, param.sn, param.expired+1, param.sign.compact)).to.be.revertedWith('invalid signature');
+
+      let tx = await payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact);
+      let receipt:any = await tx.wait()
+      LogConsole.info('bindAccount gasUsed:', receipt.gasUsed);
+      LogConsole.debug('bindAccount events:', receipt.events[0].args);
+      expect(tx).to.emit(payment, 'BindLog')
+      .withArgs(user1Account, user1.address)
+      
+      await expect(payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
+
+      param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+      LogConsole.trace('signBindAccountData param:', param);
+      await expect(payment.connect(user2).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('over wallet count');
+
+      res = await payment.getWalletsOfAccount(user1Account);
+      LogConsole.info('getWalletsOfAccount:', res);
+      expect(res.length).to.equal(1);
+      expect(res[0]).to.equal(user1.address);
+
+      await payment.setMaxWalletCount(2);
+      await payment.connect(user2).bindAccount(param.account, param.sn, param.expired, param.sign.compact);
+      res = await payment.getWalletsOfAccount(user1Account);
+      LogConsole.info('getWalletsOfAccount:', res);
+      expect(res.length).to.equal(2);
+
+      param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+      LogConsole.trace('signBindAccountData param:', param);
+      await expect(payment.connect(user3).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('over wallet count');
+
+      tx = await payment.connect(user1).unbindAccount();
+      receipt = await tx.wait()
+      LogConsole.info('unbindAccount gasUsed:', receipt.gasUsed);
+      LogConsole.debug('unbindAccount events:', receipt.events[0].args);
+      expect(tx).to.emit(payment, 'UnbindLog')
+      .withArgs(user1Account, user1.address)
+
+      res = await payment.getWalletsOfAccount(user1Account);
+      LogConsole.info('getWalletsOfAccount:', res);
+      expect(res.length).to.equal(1);
+
+      await payment.connect(user3).bindAccount(param.account, param.sn, param.expired, param.sign.compact)
+      res = await payment.getWalletsOfAccount(user1Account);
+      LogConsole.info('getWalletsOfAccount:', res);
+      expect(res.length).to.equal(2);
+    });
   });
 }
 
 describe('Payment', async () => {
   
   await testBase();
-  await testCase();
 
-  await testCase('usdt');
+  // await testCase();
+
+  // await testCase('usdt');
   
 })

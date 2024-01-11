@@ -98,18 +98,18 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
             _id := chainid()
         }
         id = _id;
-        owner = msg.sender;
-        signer = msg.sender;
-        feeTo = msg.sender;
-        feeToAccount = 0x0000000000000000000000000000000000000000000000000000000000000001;
-        _bingAccount(feeTo, feeToAccount);
-
+        maxWalletCount = 1;
         NONE = 0x0000000000000000000000000000000000000000000000000000000000000000;
         domainHash = NONE;
         enabled = true;
         nosnEnabled = false;
         autoBindEnabled = true;
-        maxWalletCount = 1;
+
+        owner = msg.sender;
+        signer = msg.sender;
+        feeTo = msg.sender;
+        feeToAccount = 0x0000000000000000000000000000000000000000000000000000000000000001;
+        _bingAccount(feeTo, feeToAccount);
     }
 
     function setSigner(address _signer) external onlyDev {
@@ -149,6 +149,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     }
 
     function _bingAccount(address _wallet, bytes32 _account) internal {
+        require(walletsOfAccount[_account].length < maxWalletCount, 'over wallet count');
         walletToAccount[_wallet] = _account;
         walletsOfAccount[_account].push(_wallet);
         emit BindLog(_account, _wallet);
@@ -162,13 +163,13 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     ) external onlyEnabled {
         require(records[_sn] == address(0), "record already exists");
         require(walletToAccount[msg.sender] == NONE, 'already bound');
-        require(walletsOfAccount[_account].length < maxWalletCount, 'over maxWalletCount');
         require(_expired > block.timestamp, "request is expired");
+        require(_account != feeToAccount, "forbidden");
         bytes32 messageHash = keccak256(abi.encodePacked(_account, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-
-        records[_sn] = msg.sender;
+        
         _bingAccount(msg.sender, _account);
+        records[_sn] = msg.sender;
     }
 
     function unbindAccount() external {
@@ -483,6 +484,10 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         for (uint i; i<_sns.length; i++) {
             result[i] = records[_sns[i]];
         }
+    }
+
+    function getWalletsOfAccount(bytes32 _account) external view returns (address[] memory) {
+        return walletsOfAccount[_account];
     }
 
     function foundAccount(bytes32 _account, address _wallet) public view returns (bool) {
