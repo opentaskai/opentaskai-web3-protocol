@@ -153,6 +153,14 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         emit BindLog(_account, _wallet);
     }
 
+    /**
+     * @dev Binds a user's wallet to their account using a signature for verification.
+     *
+     * @param _account The account identifier to bind.
+     * @param _sn A unique serial number for the binding operation.
+     * @param _expired Timestamp after which the binding request is considered expired.
+     * @param _signature The digital signature for authenticating the request.
+     */
     function bindAccount(
         bytes32 _account, 
         bytes32 _sn,
@@ -170,6 +178,9 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         records[_sn] = msg.sender;
     }
 
+    /**
+    * @dev Unbinds the caller's wallet from their account.
+    */
     function unbindAccount() external {
         bytes32 account = walletToAccount[msg.sender];
         require(account != NONE, 'no bound');
@@ -182,6 +193,14 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         emit UnbindLog(account, msg.sender);
     }
 
+    /**
+    * @dev Allows a simple deposit without a serial number (SN), only available when nosnEnabled.
+    *
+    * @param _to The account identifier to receive the deposit.
+    * @param _token The address of the token being deposited. If native ETH, use zero address.
+    * @param _amount The amount of tokens being deposited.
+    * @return A boolean value indicating whether the operation was successful.
+    */
     function simpleDeposit(bytes32 _to, address _token, uint _amount) external payable nonReentrant onlyNosnEnabled returns(bool) {
         _deposit(_token, _amount);
         emit SimpleDepositLog(_to, _token, _amount, msg.sender);
@@ -192,6 +211,13 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         return true;
     }
 
+    /**
+    * @dev Allows a simple withdrawal without a serial number (SN), only available when nosnEnabled.
+    *
+    * @param _to The address to send the withdrawn funds to.
+    * @param _token The address of the token being withdrawn. If native ETH, use zero address.
+    * @param _amount The amount of tokens to withdraw.
+    */
     function simpleWithdraw(address _to, address _token, uint _amount) external nonReentrant onlyNosnEnabled {
         bytes32 from = walletToAccount[msg.sender];
         Account storage userAccount = userAccounts[from][_token];
@@ -202,10 +228,22 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         emit SimpleWithdrawLog(_token, _amount, from, _to, msg.sender);
     }
 
+    /**
+    * @dev Executes a deposit operation with additional parameters and signature verification.
+    *
+    * @param _to The account identifier to receive the deposit.
+    * @param _token The address of the token being deposited. If native ETH, use zero address.
+    * @param _amount The total amount of tokens being deposited.
+    * @param _frozen The amount of the deposit that should be immediately frozen.
+    * @param _sn A unique serial number for the deposit operation.
+    * @param _expired Timestamp after which the deposit request is considered expired.
+    * @param _signature The digital signature for authenticating the request.
+    * @return A boolean value indicating whether the operation was successful.
+    */
     function deposit(
         bytes32 _to, 
         address _token, 
-        uint _amount, // deposit amount
+        uint _amount,
         uint _frozen,
         bytes32 _sn,
         uint _expired,
@@ -235,6 +273,17 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         return true;
     }
 
+    /**
+    * @dev Executes a withdrawal operation with additional parameters and signature verification.
+    *
+    * @param _to The address to send the withdrawn funds to.
+    * @param _token The address of the token being withdrawn. If native ETH, use zero address.
+    * @param _available The amount of available (not frozen) tokens to withdraw.
+    * @param _frozen The amount of frozen tokens to withdraw.
+    * @param _sn A unique serial number for the withdrawal operation.
+    * @param _expired Timestamp after which the withdrawal request is considered expired.
+    * @param _signature The digital signature for authenticating the request.
+    */
     function withdraw(
         address _to, 
         address _token, 
@@ -261,6 +310,17 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         emit WithdrawLog(_sn, _token, from, _to, _available, _frozen, msg.sender);
     }
 
+    /**
+    * @dev Freezes a specified amount of tokens in an account.
+    *
+    * @param _account The account identifier whose funds are to be frozen.
+    * @param _token The address of the token being frozen. If native ETH, use zero address.
+    * @param _amount The amount of tokens to freeze.
+    * @param _sn A unique serial number for the freeze operation.
+    * @param _expired Timestamp after which the freeze request is considered expired.
+    * @param _signature The digital signature for authenticating the request.
+    * @return A boolean value indicating whether the operation was successful.
+    */
     function freeze(
         bytes32 _account,
         address _token, 
@@ -287,6 +347,17 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         return true;
     }
 
+    /**
+    * @dev Unfreezes a specified amount of tokens in an account.
+    *
+    * @param _account The account identifier whose funds are to be unfrozen.
+    * @param _token The address of the token being unfrozen. If native ETH, use zero address.
+    * @param _amount The amount of tokens to unfreeze.
+    * @param _sn A unique serial number for the unfreeze operation.
+    * @param _expired Timestamp after which the unfreeze request is considered expired.
+    * @param _signature The digital signature for authenticating the request.
+    * @return A boolean value indicating whether the operation was successful.
+    */
     function unfreeze(
         bytes32 _account,
         address _token, 
@@ -317,6 +388,16 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         return true;
     }
 
+    /**
+    * @dev Transfers funds between accounts or to an external address, with fee deduction.
+    *
+    * @param _out The external address to send the amount to. If zero address, transfer between internal accounts.
+    * @param _deal A struct containing details of the transfer including token, from, to, amounts, and fee.
+    * @param _sn A unique serial number for the transfer operation.
+    * @param _expired Timestamp after which the transfer request is considered expired.
+    * @param _signature The digital signature for authenticating the request.
+    * @return A boolean value indicating whether the operation was successful.
+    */
     function transfer(
         address _out,
         TransferData calldata _deal,
@@ -372,6 +453,16 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         return true;
     }
 
+    /**
+    * @dev Cancels a trade by unfreezing the specified amounts for both parties involved.
+    *
+    * @param _userA The trade data for the first party in the trade.
+    * @param _userB The trade data for the second party in the trade.
+    * @param _sn A unique serial number for the cancel operation.
+    * @param _expired Timestamp after which the cancel request is considered expired.
+    * @param _signature The digital signature for authenticating the request.
+    * @return A boolean value indicating whether the operation was successful.
+    */
     function cancel(
         TradeData calldata _userA,
         TradeData calldata _userB,
