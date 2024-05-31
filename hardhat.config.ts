@@ -127,6 +127,7 @@
       apiKey: {
         mainnet: data.EtherscanApiKey,
         goerli: data.EtherscanApiKey,
+        sepolia: data.EtherscanApiKey,
         arbitrumOne: data.ArbitrumscanApiKey,
         polygon: data.MaticscanApiKey,
         bsc: data.BscscanApiKey,

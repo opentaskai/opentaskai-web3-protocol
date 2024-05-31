@@ -1,0 +1,77 @@
+[
+    {
+        "call": true,
+        "called": true,
+        "functionName": "setupConfig",
+        "contractName": "Payment",
+        "contractAddr": "",
+        "args": [
+            "${Config.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "functionName": "setSigner",
+        "contractName": "Payment",
+        "contractAddr": "",
+        "args": [
+            "${signerWallet.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "functionName": "setFeeTo",
+        "contractName": "Payment",
+        "contractAddr": "",
+        "args": [
+            "${feeWallet.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": false,
+        "name": "AIOriginals",
+        "functionName": "setupConfig",
+        "contractName": "NFT",
+        "contractAddr": "",
+        "args": [
+            "${Config.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "name": "USDT",
+        "functionName": "setClaimAmount",
+        "contractName": "ERC20Token",
+        "contractAddr": "",
+        "args": [
+            "10000000000000000000000"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "name": "USDC",
+        "functionName": "setClaimAmount",
+        "contractName": "ERC20Token",
+        "contractAddr": "",
+        "args": [
+            "10000000000000000000000"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "name": "USDT",
+        "functionName": "mint",
+        "contractName": "ERC20Token",
+        "contractAddr": "",
+        "args": [
+            "0xeF6191A5C8e983dA45DAC2A787d49fE3f2B6D54e",
+            "1000000000000000000000000"
+        ]
+    }
+]
