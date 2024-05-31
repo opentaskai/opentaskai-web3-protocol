@@ -62,5 +62,16 @@
             "https://asset.opentaskai.com/nft/AIGenesis/97/",
             ".json"
         ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "name": "USDT",
+        "functionName": "setClaimAmount",
+        "contractName": "ERC20Token",
+        "contractAddr": "",
+        "args": [
+            "10000000000000000000000"
+        ]
     }
 ]
