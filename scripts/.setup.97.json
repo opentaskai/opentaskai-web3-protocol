@@ -73,5 +73,40 @@
         "args": [
             "10000000000000000000000"
         ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "name": "USDT",
+        "functionName": "mint",
+        "contractName": "ERC20Token",
+        "contractAddr": "",
+        "args": [
+            "0xeF6191A5C8e983dA45DAC2A787d49fE3f2B6D54e",
+            "1000000000000000000000000"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "name": "USDC",
+        "functionName": "setClaimAmount",
+        "contractName": "ERC20Token",
+        "contractAddr": "",
+        "args": [
+            "10000000000000000000000"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "name": "USDC",
+        "functionName": "mint",
+        "contractName": "ERC20Token",
+        "contractAddr": "",
+        "args": [
+            "0xeF6191A5C8e983dA45DAC2A787d49fE3f2B6D54e",
+            "1000000000000000000000000"
+        ]
     }
 ]
