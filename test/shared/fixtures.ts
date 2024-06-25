@@ -30,6 +30,24 @@ export function bytes32ToHex(val: string, has0x: boolean = false) {
     return res;
 }
 
+export function formatLogArgs(args: any, format: any) {
+    const result: any = {};
+    let i = 0;
+    for(const k in format) {
+        if(format[k] === 'bytes32') {
+            result[k] = bytes32ToHex(args[i]);
+        } else if(format[k] === 'address') {
+            result[k] = args[i].toLowerCase();
+        } else if(typeof format[k] === 'object' && format[k] !== null) {
+            result[k] = formatLogArgs(args[i], format[k]);
+        } else {
+            result[k] = args[i].toString();
+        }
+        i++;
+    }
+    return result;
+}
+
 async function erc20Contract(name: string, symbol: string, decimals: number): Promise<ERC20Token> {
     let factory = await ethers.getContractFactory('ERC20Token')
     let contract = (await factory.deploy(name, symbol, decimals)) as ERC20Token

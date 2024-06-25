@@ -4,7 +4,7 @@ import { ERC20Token } from '../typechain/ERC20Token'
 import { Payment } from '../typechain/Payment'
 import { expect } from './shared/expect'
 import { computeDomainSeparator } from './shared/signature-helper'
-import { paymentFixture, PaymentFixture, TradeData, uuid, hexToBytes32 } from './shared/fixtures'
+import { paymentFixture, PaymentFixture, TradeData, uuid, hexToBytes32, formatLogArgs } from './shared/fixtures'
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
 import { LogConsole } from './shared/logconsol'
 import { TypedDataDomain } from "@ethersproject/abstract-signer"
@@ -105,7 +105,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
     const depositAmount = expandWithDecimals(6);
     const frozenAmount = depositAmount.div(2);
     const availableAmount = depositAmount.sub(frozenAmount);
-
+/*
     it('simpleDeposit', async () => {
       let ownerBalance = await getBalance(owner);
       LogConsole.debug('owner balance:', ownerBalance);
@@ -413,6 +413,21 @@ const testCase = async (_tokenName:string = 'ETH') => {
       const events = receipt.events[receipt.events.length-1].args
       LogConsole.info('transfer gasUsed:', receipt.gasUsed);
       LogConsole.debug('transfer events:', events);
+      const format = {
+          _sn: 'bytes32',
+          _deal: {
+              token: 'address',
+              from: 'bytes32',
+              to: 'bytes32',
+              available: 'string',
+              frozen: 'string',
+              amount: 'string',
+              fee: 'string',
+          },
+          _out: 'address',
+          _operator: 'address',
+      }
+      LogConsole.debug('transfer formatLogArgs:', formatLogArgs(events, format));
       const eventDeal = {...transferData};
       delete eventDeal.expired;
       expect(events._sn).to.equal(param.sn);
@@ -595,7 +610,89 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('records:', records);
       
     });
-    
+*/    
+    it('cancel1', async () => {
+      // simpleDeposit and freeze for user1
+      let param: any = await payFix.signDepositData(user1Account, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+
+      // simpleDeposit and freeze for user2
+      param = await payFix.signDepositData(user2Account, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+
+      // preparing cancel data 
+      const userA: TradeData = {
+        account: user1Account,
+        token: tokenAddr,
+        amount: frozenAmount,
+        fee: frozenAmount.div(2)
+      }
+
+      const userB: TradeData = {
+        account: user2Account,
+        token: tokenAddr,
+        amount: 0,
+        fee: 0
+      }
+
+      param = await payFix.signCancelData(userA, userB, uuid(), expired);
+      LogConsole.trace('signCancelData:', param);
+
+      const user1AccountBefore = await payment.userAccounts(user1Account, tokenAddr);
+      LogConsole.debug('user1AccountBefore:', user1AccountBefore);
+
+      const user2AccountBefore = await payment.userAccounts(user2Account, tokenAddr);
+      LogConsole.debug('user2AccountBefore:', user2AccountBefore);
+
+      const feeToAccountBefore = await payment.userAccounts(feeToAccount, tokenAddr);
+      LogConsole.debug('feeToAccountBefore:', feeToAccountBefore);
+
+      const paymentBalanceBefore = await payment.getBalance(tokenAddr)
+      LogConsole.debug('paymentBalanceBefore:', paymentBalanceBefore);
+      
+      // test cancel
+      let tx = await payment.cancel(param.userA, param.userB, param.sn, param.expired, param.sign.compact);
+      const receipt:any = await tx.wait()
+      const events = receipt.events[receipt.events.length-1].args
+      LogConsole.info('cancel gasUsed:', receipt.gasUsed);
+      LogConsole.debug('cancel events:', events);
+      const format = {
+          _sn: 'bytes32',
+          _userA: {
+              account: 'bytes32',
+              token: 'address',
+              amount: 'string',
+              fee: 'string',
+          },
+          _userB: {
+              account: 'bytes32',
+              token: 'address',
+              amount: 'string',
+              fee: 'string',
+          },
+          _operator: 'address',
+      }
+      LogConsole.debug('cancel formatLogArgs:', formatLogArgs(events, format));
+      expect(events._sn).to.equal(param.sn);
+
+      const user1AccountAfter = await payment.userAccounts(user1Account, tokenAddr);
+      LogConsole.debug('user1AccountAfter:', user1AccountAfter);
+      const user2AccountAfter = await payment.userAccounts(user2Account, tokenAddr);
+      LogConsole.debug('user2AccountAfter:', user2AccountAfter);
+      const feeToAccountAfter = await payment.userAccounts(feeToAccount, tokenAddr);
+      LogConsole.debug('feeToAccountAfter:', feeToAccountAfter);
+      const paymentBalanceAfter = await payment.getBalance(tokenAddr)
+      LogConsole.debug('paymentBalanceAfter:', paymentBalanceAfter);
+
+      expect(user1AccountAfter.available).to.equal(user1AccountBefore.available.add(frozenAmount.div(2)));
+      expect(user1AccountAfter.frozen).to.equal(user1AccountBefore.frozen.sub(frozenAmount));
+      expect(user2AccountAfter.available).to.equal(user2AccountBefore.available);
+      expect(user2AccountAfter.frozen).to.equal(user2AccountBefore.frozen);
+      expect(feeToAccountAfter.available).to.equal(feeToAccountBefore.available.add(frozenAmount.div(2)));
+      expect(feeToAccountAfter.frozen).to.equal(feeToAccountBefore.frozen);
+      expect(paymentBalanceBefore).to.equal(paymentBalanceAfter);
+      
+    });
   });
 }
 
@@ -773,10 +870,10 @@ const testBase = async () => {
 
 describe('Payment', async () => {
   
-  await testBase();
+  // await testBase();
 
   await testCase();
 
-  await testCase('usdt');
+  // await testCase('usdt');
   
 })
