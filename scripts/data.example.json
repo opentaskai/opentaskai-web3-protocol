@@ -7,6 +7,14 @@
 		"upgraded": true,
 		"verified": true
 	},
+	"managerWallet": {
+		"address": "",
+		"constructorArgs": [],
+		"upgradedAddress": "",
+		"deployed": true,
+		"upgraded": true,
+		"verified": true
+	},
 	"signerWallet": {
 		"address": "",
 		"constructorArgs": [],

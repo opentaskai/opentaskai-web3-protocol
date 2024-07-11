@@ -2,6 +2,16 @@
     {
         "call": true,
         "called": true,
+        "functionName": "changeAdmin",
+        "contractName": "Config",
+        "contractAddr": "",
+        "args": [
+            "${managerWallet.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
         "functionName": "setupConfig",
         "contractName": "Payment",
         "contractAddr": "",
