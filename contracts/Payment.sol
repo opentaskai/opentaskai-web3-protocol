@@ -420,7 +420,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         records[_sn] = msg.sender;
         
         Account storage fromAccount = userAccounts[_deal.from][_deal.token];
-
+        // Deduct from available balance when frozen balance is insufficient
         if(_deal.available > 0) {
             require(fromAccount.available >= _deal.available, 'insufficient available');
             fromAccount.available = fromAccount.available - _deal.available;
