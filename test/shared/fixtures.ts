@@ -125,6 +125,7 @@ export interface PaymentFixture {
         frozen: (string | number | BigNumber),
         amount: (string | number | BigNumber),
         fee: (string | number | BigNumber),
+        paid: (string | number | BigNumber),
         sn: string,
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
@@ -239,6 +240,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         frozen: (string | number | BigNumber),
         amount: (string | number | BigNumber),
         fee: (string | number | BigNumber),
+        paid: (string | number | BigNumber),
         sn: string,
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
@@ -246,10 +248,10 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         sn = hexToBytes32(sn);
         from = hexToBytes32(from);
         to = hexToBytes32(to);
-        const types = ['address', 'address', 'bytes32', 'bytes32', 'uint256',  'uint256',  'uint256',  'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [out, token, from, to, available, frozen, amount, fee, sn, expired, chainId, payment.address]
+        const types = ['address', 'address', 'bytes32', 'bytes32', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
+        const values = [out, token, from, to, available, frozen, amount, fee, paid, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
-        return {out, token, from, to, available, frozen, amount, fee, sn, expired, sign};
+        return {out, token, from, to, available, frozen, amount, fee, paid, sn, expired, sign};
     }
 
     const signCancelData = async (

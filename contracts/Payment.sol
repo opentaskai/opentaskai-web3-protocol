@@ -27,13 +27,14 @@ struct DetailedAccount {
 }
 
 struct TransferData {
-    address token;
-    bytes32 from;
-    bytes32 to;
-    uint available;
-    uint frozen;
-    uint amount; //to 'for the receiver(to)'
-    uint fee; // to 'for the feeTo'
+    address token; // Token address
+    bytes32 from; // Sender's account number
+    bytes32 to; // Recipient's account number
+    uint available; // Amount deducted from sender's available balance
+    uint frozen; // Amount deducted from sender's frozen balance
+    uint amount; // Amount transferred to recipient's account
+    uint fee; // Fee transferred to the fee account
+    uint paid; // Amount paid by the sender, which is frozen in the sender's account
 }
 
 struct TradeData {
@@ -233,7 +234,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     *
     * @param _to The account identifier to receive the deposit.
     * @param _token The address of the token being deposited. If native ETH, use zero address.
-    * @param _amount The total amount of tokens being deposited.
+    * @param _amount The paid amount of tokens being deposited.
     * @param _frozen The amount of the deposit that should be immediately frozen.
     * @param _sn A unique serial number for the deposit operation.
     * @param _expired Timestamp after which the deposit request is considered expired.
@@ -407,8 +408,8 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     ) external nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        require(_deal.available + _deal.frozen == _deal.amount + _deal.fee && _deal.amount + _deal.fee > 0, "invalid deal");
-        bytes32 messageHash = keccak256(abi.encodePacked(_out, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _sn, _expired, id, address(this)));
+        require(_deal.available + _deal.frozen == _deal.amount + _deal.fee && _deal.amount + _deal.fee > 0 && _deal.paid >= _deal.frozen, "invalid deal");
+        bytes32 messageHash = keccak256(abi.encodePacked(_out, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _deal.paid, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         bool isFrom = foundAccount(_deal.from, msg.sender);
         bool isTo = foundAccount(_deal.to, msg.sender);
@@ -426,8 +427,14 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         }
 
         if(_deal.frozen > 0) {
-            require(fromAccount.frozen >= _deal.frozen, 'insufficient frozen');
+            require(fromAccount.frozen >= _deal.paid, 'insufficient frozen');
             fromAccount.frozen = fromAccount.frozen - _deal.frozen;
+            // if paid greater than 'frozen', it indicates that the excess amount needs to be unfrozen
+            if(_deal.paid > _deal.frozen) {
+                uint excessAmount = _deal.paid - _deal.frozen;
+                fromAccount.frozen = fromAccount.frozen - excessAmount;
+                fromAccount.available = fromAccount.available + excessAmount; 
+            }
         }
 
         if(_out != address(0)) {

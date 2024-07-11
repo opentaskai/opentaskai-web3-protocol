@@ -25,7 +25,7 @@ export class LogConsole{
         return false;
     }
 
-    static output(_level:string, ...args:any[]) {
+    static output(_level:string, ...args:any) {
         if(!LogConsole.checkLevel(_level)) {
             return;
         }
@@ -33,22 +33,22 @@ export class LogConsole{
 
     }
     static trace(...args:any[]) {
-        LogConsole.output('trace',args);
+        LogConsole.output('trace',...args);
     }
     static debug(...args:any[]) {
-        LogConsole.output('debug',args);
+        LogConsole.output('debug',...args);
     }
     static info(...args:any[]) {
-        LogConsole.output('info',args);
+        LogConsole.output('info',...args);
     }
     static warn(...args:any[]) {
-        LogConsole.output('warn',args);
+        LogConsole.output('warn',...args);
     }
     static error(...args:any[]) {
-        LogConsole.output('error',args);
+        LogConsole.output('error',...args);
     }
     static fatal(...args:any[]) {
-        LogConsole.output('fatal',args);
+        LogConsole.output('fatal',...args);
     }
 
 }
