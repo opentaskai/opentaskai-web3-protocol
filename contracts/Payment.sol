@@ -72,7 +72,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     event DepositLog(bytes32 indexed _sn, address indexed _token, bytes32 _to, uint _amount, uint _frozen, address _operator);
     event WithdrawLog(bytes32 indexed _sn, address indexed _token, bytes32 _from, address _to, uint _available, uint _frozen, address _operator);
     event FreezeLog(bytes32 indexed _sn, bytes32 indexed _account, address indexed _token, uint _amount, address _operator);
-    event UnfreezeLog(bytes32 indexed _sn, bytes32 indexed _account, address indexed _token, uint _amount, address _operator);
+    event UnfreezeLog(bytes32 indexed _sn, bytes32 indexed _account, address indexed _token, uint _amount, uint _fee, address _operator);
     event CancelLog(bytes32 indexed _sn, TradeData _userA, TradeData _userB, address _operator);
     event TransferLog(bytes32 indexed _sn, TransferData _deal, address _out, address _operator);
     event BindLog(bytes32 indexed _account, address indexed _operator);
@@ -354,6 +354,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     * @param _account The account identifier whose funds are to be unfrozen.
     * @param _token The address of the token being unfrozen. If native ETH, use zero address.
     * @param _amount The amount of tokens to unfreeze.
+    * @param _fee // Fee transferred to the fee account
     * @param _sn A unique serial number for the unfreeze operation.
     * @param _expired Timestamp after which the unfreeze request is considered expired.
     * @param _signature The digital signature for authenticating the request.
@@ -363,13 +364,15 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         bytes32 _account,
         address _token, 
         uint _amount,
+        uint _fee,
         bytes32 _sn,
         uint _expired,
         bytes calldata _signature
     ) external nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _sn, _expired, id, address(this)));
+        require(_amount > _fee, "amount must greater than fee");
+        bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _fee, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         bytes32 operatorAccount = walletToAccount[msg.sender];
         if (operatorAccount != _account && msg.sender != admin()) {
@@ -380,12 +383,12 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
             account: _account,
             token: _token,
             amount: _amount,
-            fee: 0
+            fee: _fee
         });
         _unfreeze(data);
 
         records[_sn] = msg.sender;
-        emit UnfreezeLog(_sn, _account, _token, _amount, msg.sender);
+        emit UnfreezeLog(_sn, _account, _token, _amount, _fee, msg.sender);
         return true;
     }
 
