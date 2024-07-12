@@ -8,13 +8,13 @@
     "verified": true
   },
   "managerWallet": {
-		"address": "0x3bBfEf13A7bd45fB2c7CD88f5cb1231Ece2B177b",
-		"constructorArgs": [],
-		"upgradedAddress": "",
-		"deployed": true,
-		"upgraded": true,
-		"verified": true
-	},
+    "address": "0x3bBfEf13A7bd45fB2c7CD88f5cb1231Ece2B177b",
+    "constructorArgs": [],
+    "upgradedAddress": "",
+    "deployed": true,
+    "upgraded": true,
+    "verified": true
+  },
   "signerWallet": {
     "address": "0x278bD24A8B65D34bBF0a5b0D4b5510C2135d8f84",
     "constructorArgs": [],
@@ -69,7 +69,7 @@
     "proxy": true,
     "address": "0xF58cD5dEAA238210d2cc1328Dd8eB27F5B2a30b2",
     "constructorArgs": [],
-    "upgradedAddress": "0x9Aa6Ff7524C8bb7E78e9853713657FD678C8F3F7",
+    "upgradedAddress": "0x65588974eee1a2199e966758e4F89235Be8b640d",
     "deployed": true,
     "upgraded": true,
     "verified": true
