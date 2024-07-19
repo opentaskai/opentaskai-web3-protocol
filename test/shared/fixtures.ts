@@ -90,6 +90,13 @@ export interface PaymentFixture {
         expired: (string | number | BigNumber),
         domain?: TypedDataDomain
     ): Promise<any>,
+    signReplaceAccountData (
+        account: string,
+        wallet: string,
+        sn: string,
+        expired: (string | number | BigNumber),
+        domain?: TypedDataDomain
+    ): Promise<any>,
     signDepositData (
         to: string,
         token: string,
@@ -189,6 +196,21 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         const values = [account, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {account, sn, expired, sign};
+    }
+
+    const signReplaceAccountData = async (
+        account: string,
+        wallet: string,
+        sn: string,
+        expired: (string | number | BigNumber),
+        domain?: TypedDataDomain
+    ): Promise<any> => {
+        account = hexToBytes32(account);
+        sn = hexToBytes32(sn);
+        const types = ['bytes32', 'address', 'bytes32', 'uint256', 'uint256', 'address'];
+        const values = [account, wallet, sn, expired, chainId, payment.address]
+        const sign = await signData(signer.address, types, values, domain);
+        return {account, wallet, sn, expired, sign};
     }
 
     const signDepositData = async (
@@ -296,7 +318,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         return {userA, userB, sn, expired, sign};
     }
 
-    return { usdt, usdc, payment, config, signBindAccountData, signDepositData, signWithdrawData, signFreezeData, signUnFreezeData, signTransferData, signCancelData }
+    return { usdt, usdc, payment, config, signBindAccountData, signReplaceAccountData, signDepositData, signWithdrawData, signFreezeData, signUnFreezeData, signTransferData, signCancelData }
 }
 
 export interface NFTFixture {

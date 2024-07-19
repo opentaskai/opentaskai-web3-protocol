@@ -944,8 +944,8 @@ const testBase = async () => {
       let receipt:any = await tx.wait()
       LogConsole.info('bindAccount gasUsed:', receipt.gasUsed);
       LogConsole.debug('bindAccount events:', receipt.events[0].args);
-      expect(tx).to.emit(payment, 'BindLog')
-      .withArgs(user1Account, user1.address)
+      await expect(tx).to.emit(payment, 'BindLog')
+      .withArgs(user1Account, user1.address, user1.address)
       
       await expect(payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
 
@@ -972,8 +972,8 @@ const testBase = async () => {
       receipt = await tx.wait()
       LogConsole.info('unbindAccount gasUsed:', receipt.gasUsed);
       LogConsole.debug('unbindAccount events:', receipt.events[0].args);
-      expect(tx).to.emit(payment, 'UnbindLog')
-      .withArgs(user1Account, user1.address)
+      await expect(tx).to.emit(payment, 'UnbindLog')
+      .withArgs(user1Account, user1.address, user1.address)
 
       res = await payment.getWalletsOfAccount(user1Account);
       LogConsole.info('getWalletsOfAccount:', res);
@@ -983,6 +983,34 @@ const testBase = async () => {
       res = await payment.getWalletsOfAccount(user1Account);
       LogConsole.info('getWalletsOfAccount:', res);
       expect(res.length).to.equal(2);
+    });
+
+    it('replace', async () => {
+      let param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+      LogConsole.trace('signBindAccountData param:', param);
+      let tx = await payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact);
+      let receipt:any = await tx.wait()
+      LogConsole.info('bindAccount gasUsed:', receipt.gasUsed);
+      LogConsole.debug('bindAccount events:', receipt.events[0].args);
+      await expect(tx).to.emit(payment, 'BindLog')
+      .withArgs(user1Account, user1.address, user1.address)
+      
+
+      param = await payFix.signReplaceAccountData(user2Account, user1.address, uuid(), expired);
+      LogConsole.trace('signReplaceAccountData param:', param);
+      await expect(payment.connect(user1).replaceAccount(param.account, param.wallet, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('no change');
+      await expect(payment.connect(user2).replaceAccount(param.account, param.wallet, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('no bound');
+
+      param = await payFix.signReplaceAccountData(user1Account, user1.address, uuid(), expired);
+      LogConsole.trace('signReplaceAccountData param:', param);
+      tx = await payment.connect(user2).replaceAccount(param.account, param.wallet, param.sn, param.expired, param.sign.compact);
+      receipt = await tx.wait()
+      LogConsole.info('replaceAccount gasUsed:', receipt.gasUsed);
+      LogConsole.debug('replaceAccount events:', receipt.events);
+      await expect(tx).to.emit(payment, 'UnbindLog')
+      .withArgs(user1Account, user1.address, user2.address)
+      await expect(tx).to.emit(payment, 'BindLog')
+      .withArgs(user1Account, user2.address, user2.address)
     });
   });
 }

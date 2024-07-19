@@ -75,8 +75,8 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     event UnfreezeLog(bytes32 indexed _sn, bytes32 indexed _account, address indexed _token, uint _amount, uint _fee, address _operator);
     event CancelLog(bytes32 indexed _sn, TradeData _userA, TradeData _userB, address _operator);
     event TransferLog(bytes32 indexed _sn, TransferData _deal, address _out, address _operator);
-    event BindLog(bytes32 indexed _account, address indexed _operator);
-    event UnbindLog(bytes32 indexed _account, address indexed _operator);
+    event BindLog(bytes32 indexed _account, address _wallet, address indexed _operator);
+    event UnbindLog(bytes32 indexed _account, address _wallet, address indexed _operator);
     
     receive() external payable {
     }
@@ -151,7 +151,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(walletsOfAccount[_account].length < maxWalletCount, 'over wallet count');
         walletToAccount[_wallet] = _account;
         walletsOfAccount[_account].push(_wallet);
-        emit BindLog(_account, _wallet);
+        emit BindLog(_account, _wallet, msg.sender);
     }
 
     /**
@@ -182,16 +182,53 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     /**
     * @dev Unbinds the caller's wallet from their account.
     */
-    function unbindAccount() external {
-        bytes32 account = walletToAccount[msg.sender];
+    function _unbindAccount(address _user) internal {
+        bytes32 account = walletToAccount[_user];
         require(account != NONE, 'no bound');
-        walletToAccount[msg.sender] = NONE;
-        uint index = indexAccount(account, msg.sender);
+        walletToAccount[_user] = NONE;
+        uint index = indexAccount(account, _user);
         if(index < walletsOfAccount[account].length-1) {
             walletsOfAccount[account][index] = walletsOfAccount[account][walletsOfAccount[account].length-1];
         }
         walletsOfAccount[account].pop();
-        emit UnbindLog(account, msg.sender);
+        emit UnbindLog(account, _user, msg.sender);
+    }
+
+    /**
+    * @dev Unbinds the caller's wallet from their account.
+    */
+    function unbindAccount() external {
+        _unbindAccount(msg.sender);
+    }
+
+    /**
+     * @dev Replace user's wallet to their account using a signature for verification.
+     *
+     * @param _account The account identifier to bind.
+     * @param _wallet The binded wallet address identifier to unbind.
+     * @param _sn A unique serial number for the binding operation.
+     * @param _expired Timestamp after which the binding request is considered expired.
+     * @param _signature The digital signature for authenticating the request.
+     */
+    function replaceAccount(
+        bytes32 _account, 
+        address _wallet, 
+        bytes32 _sn,
+        uint _expired,
+        bytes calldata _signature
+    ) external onlyEnabled {
+        require(records[_sn] == address(0), "record already exists");
+        require(_wallet != msg.sender, 'no change');
+        require(walletToAccount[_wallet] == _account, 'no bound');
+        require(walletToAccount[msg.sender] == NONE, 'already bound');
+        require(_expired > block.timestamp, "request is expired");
+        require(_account != feeToAccount, "forbidden");
+        bytes32 messageHash = keccak256(abi.encodePacked(_account, _wallet, _sn, _expired, id, address(this)));
+        require(verifyMessage(messageHash, _signature), "invalid signature");
+        
+        _unbindAccount(_wallet);
+        _bindAccount(msg.sender, _account);
+        records[_sn] = msg.sender;
     }
 
     /**
