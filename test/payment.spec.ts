@@ -406,6 +406,10 @@ const testCase = async (_tokenName:string = 'ETH') => {
       invalidDealData.available = invalidDealData.available.add(1);
       await expect(payment.transfer(param.out, invalidDealData, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid deal');
 
+      invalidDealData = { ... transferData };
+      invalidDealData.frozen = invalidDealData.frozen.add(10);
+      await expect(payment.transfer(param.out, invalidDealData, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid deal');
+
       let userAccount = await payment.userAccounts(user1Account, param.token);
       LogConsole.debug('userAccount:', userAccount);
 
