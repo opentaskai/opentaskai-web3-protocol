@@ -378,6 +378,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
     it('inner transfer', async () => {
       const availableTradeAmount = expandWithDecimals(2);
       const frozenTradeAmount = expandWithDecimals(1);
+      const excessFee = 0;
       
       // simpleDeposit and freeze for user1
       let param: any = await payFix.signDepositData(user1Account, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
@@ -388,7 +389,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
 
       // preparing transfer data 
-      param = await payFix.signTransferData(ZERO_ADDRESS, tokenAddr, user1Account, user2Account, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, frozenTradeAmount, uuid(), expired);
+      param = await payFix.signTransferData(ZERO_ADDRESS, tokenAddr, user1Account, user2Account, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, frozenTradeAmount, excessFee, uuid(), expired);
       LogConsole.trace('signTransferData:', param);
       const transferData = { ...param };
       delete transferData.out;
@@ -490,6 +491,8 @@ const testCase = async (_tokenName:string = 'ETH') => {
     it('transfer for paid > frozen', async () => {
       const availableTradeAmount = expandWithDecimals(2);
       const frozenTradeAmount = expandWithDecimals(1);
+      const fee = expandWithDecimals(1);
+      const excessFee = expandWithDecimals(1, 16);
       
       // simpleDeposit and freeze for user1
       let param: any = await payFix.signDepositData(user1Account, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
@@ -501,13 +504,23 @@ const testCase = async (_tokenName:string = 'ETH') => {
 
       // preparing transfer data 
       const paidAmount = frozenTradeAmount.mul(2);
-      param = await payFix.signTransferData(ZERO_ADDRESS, tokenAddr, user1Account, user2Account, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, paidAmount, uuid(), expired);
+      param = await payFix.signTransferData(ZERO_ADDRESS, tokenAddr, user1Account, user2Account, availableTradeAmount, frozenTradeAmount, availableTradeAmount, fee, paidAmount, excessFee, uuid(), expired);
       LogConsole.trace('signTransferData:', param);
       const transferData = { ...param };
       delete transferData.out;
       delete transferData.sn;
       delete transferData.sign;
       LogConsole.debug('transferData:', transferData);
+
+      // test reverted with reason string 'invalid deal'
+      let invalidDealData = { ... transferData };
+      invalidDealData.paid = invalidDealData.frozen.sub(1);
+      await expect(payment.transfer(param.out, invalidDealData, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid deal');
+
+      invalidDealData = { ... transferData };
+      invalidDealData.excessFee = invalidDealData.frozen.add(1);
+      invalidDealData.paid = invalidDealData.frozen.add(invalidDealData.excessFee);
+      await expect(payment.transfer(param.out, invalidDealData, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid deal');
 
       let userAccount = await payment.userAccounts(user1Account, param.token);
       LogConsole.debug('userAccount:', userAccount);
@@ -545,6 +558,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
               amount: 'string',
               fee: 'string',
               paid: 'string',
+              excessFee: 'string',
           },
           _out: 'address',
           _operator: 'address',
@@ -564,12 +578,12 @@ const testCase = async (_tokenName:string = 'ETH') => {
       LogConsole.debug('feeToAccountAfter:', feeToAccountAfter);
       const paymentBalanceAfter = await payment.getBalance(param.token)
       LogConsole.debug('paymentBalanceAfter:', paymentBalanceAfter);
-
-      expect(user1AccountAfter.available).to.equal(user1AccountBefore.available.sub(availableTradeAmount).add(frozenTradeAmount));
-      expect(user1AccountAfter.frozen).to.equal(user1AccountBefore.frozen.sub(paidAmount));
+      const excessAmount = paidAmount.sub(frozenTradeAmount)
+      expect(user1AccountAfter.available).to.equal(user1AccountBefore.available.sub(availableTradeAmount).add(excessAmount).sub(excessFee));
+      expect(user1AccountAfter.frozen).to.equal(user1AccountBefore.frozen.sub(frozenTradeAmount).sub(excessAmount));
       expect(user2AccountAfter.available).to.equal(user2AccountBefore.available.add(availableTradeAmount));
       expect(user2AccountAfter.frozen).to.equal(user2AccountBefore.frozen);
-      expect(feeToAccountAfter.available).to.equal(feeToAccountBefore.available.add(frozenTradeAmount));
+      expect(feeToAccountAfter.available).to.equal(feeToAccountBefore.available.add(fee).add(excessFee));
       expect(feeToAccountAfter.frozen).to.equal(feeToAccountBefore.frozen);
       expect(paymentBalanceBefore).to.equal(paymentBalanceAfter);
 
@@ -578,7 +592,8 @@ const testCase = async (_tokenName:string = 'ETH') => {
     it('transfer and withdraw', async () => {
       const availableTradeAmount = expandWithDecimals(2);
       const frozenTradeAmount = expandWithDecimals(1);
-      
+      const excessFee = 0;
+
       // simpleDeposit and freeze for user1
       let param: any = await payFix.signDepositData(user1Account, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
       await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
@@ -588,7 +603,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
 
       // preparing transfer data 
-      param = await payFix.signTransferData(user2.address, tokenAddr, user1Account, user2Account, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, frozenTradeAmount, uuid(), expired);
+      param = await payFix.signTransferData(user2.address, tokenAddr, user1Account, user2Account, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, frozenTradeAmount, excessFee, uuid(), expired);
       LogConsole.trace('signTransferData:', param);
       const transferData = { ...param };
       delete transferData.out;
@@ -905,7 +920,7 @@ const testBase = async () => {
 
       const availableTradeAmount = expandWithDecimals(2);
       const frozenTradeAmount = expandWithDecimals(1);
-      param = await payFix.signTransferData(ZERO_ADDRESS, ZERO_ADDRESS, user1Account, user2Account, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, frozenTradeAmount, uuid(), expired);
+      param = await payFix.signTransferData(ZERO_ADDRESS, ZERO_ADDRESS, user1Account, user2Account, availableTradeAmount, frozenTradeAmount, availableTradeAmount, frozenTradeAmount, frozenTradeAmount, 0, uuid(), expired);
       LogConsole.trace('signTransferData:', param);
       res = await payment.verifyMessage(param.sign.messageHash, param.sign.compact);
       LogConsole.info('verifyMessage2 for eoa res:', res);

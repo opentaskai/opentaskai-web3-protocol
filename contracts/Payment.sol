@@ -33,8 +33,9 @@ struct TransferData {
     uint available; // Amount deducted from sender's available balance
     uint frozen; // Amount deducted from sender's frozen balance
     uint amount; // Amount transferred to recipient's account
-    uint fee; // Fee transferred to the fee account
-    uint paid; // Amount paid by the sender, which is frozen in the sender's account
+    uint fee; // Base fee for the transaction transferred to the fee account
+    uint paid; // Total amount paid by the sender, potentially including excess payment, which is frozen in the sender's account
+    uint excessFee; // Additional fee charged if 'paid' exceeds 'frozen', transferred to the fee account
 }
 
 struct TradeData {
@@ -448,8 +449,8 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     ) external nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        require(_deal.available + _deal.frozen == _deal.amount + _deal.fee && _deal.amount + _deal.fee > 0 && _deal.paid >= _deal.frozen, "invalid deal");
-        bytes32 messageHash = keccak256(abi.encodePacked(_out, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _deal.paid, _sn, _expired, id, address(this)));
+        require(_deal.available + _deal.frozen == _deal.amount + _deal.fee && _deal.amount + _deal.fee > 0 && _deal.paid >= _deal.frozen + _deal.excessFee && _deal.frozen >= _deal.excessFee, "invalid deal");
+        bytes32 messageHash = keccak256(abi.encodePacked(_out, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _deal.paid, _deal.excessFee, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         bool isFrom = foundAccount(_deal.from, msg.sender);
         bool isTo = foundAccount(_deal.to, msg.sender);
@@ -473,16 +474,17 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
             if(_deal.paid > _deal.frozen) {
                 uint excessAmount = _deal.paid - _deal.frozen;
                 fromAccount.frozen = fromAccount.frozen - excessAmount;
-                fromAccount.available = fromAccount.available + excessAmount; 
+                fromAccount.available = fromAccount.available + excessAmount  - _deal.excessFee; 
             }
         }
 
+        uint totalFee = _deal.fee + _deal.excessFee;
         if(_out != address(0)) {
             if(_deal.amount > 0) {
                 _withdraw(_out, _deal.token, _deal.amount);
             }
-            if(_deal.fee > 0) {
-                _withdraw(feeTo, _deal.token, _deal.fee);
+            if(totalFee > 0) {
+                _withdraw(feeTo, _deal.token, totalFee);
             }
         } else {
             if(_deal.amount > 0) {
@@ -490,9 +492,9 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
                 toAccount.available = toAccount.available + _deal.amount;
             }
 
-            if(_deal.fee > 0) {
+            if(totalFee > 0) {
                 Account storage feeAccount = userAccounts[feeToAccount][_deal.token];
-                feeAccount.available = feeAccount.available + _deal.fee;
+                feeAccount.available = feeAccount.available + totalFee;
             }
         }
         
