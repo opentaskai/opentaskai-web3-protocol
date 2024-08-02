@@ -149,6 +149,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     }
 
     function _bindAccount(address _wallet, bytes32 _account) internal {
+        require(walletToAccount[_wallet] == NONE, 'already bound');
         require(walletsOfAccount[_account].length < maxWalletCount, 'over wallet count');
         walletToAccount[_wallet] = _account;
         walletsOfAccount[_account].push(_wallet);
@@ -170,7 +171,6 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         bytes calldata _signature
     ) external onlyEnabled {
         require(records[_sn] == address(0), "record already exists");
-        require(walletToAccount[msg.sender] == NONE, 'already bound');
         require(_expired > block.timestamp, "request is expired");
         require(_account != feeToAccount, "forbidden");
         bytes32 messageHash = keccak256(abi.encodePacked(_account, _sn, _expired, id, address(this)));
@@ -221,7 +221,6 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(records[_sn] == address(0), "record already exists");
         require(_wallet != msg.sender, 'no change');
         require(walletToAccount[_wallet] == _account, 'no bound');
-        require(walletToAccount[msg.sender] == NONE, 'already bound');
         require(_expired > block.timestamp, "request is expired");
         require(_account != feeToAccount, "forbidden");
         bytes32 messageHash = keccak256(abi.encodePacked(_account, _wallet, _sn, _expired, id, address(this)));
@@ -293,10 +292,9 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _amount, _frozen, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
-        if (autoBindEnabled && walletsOfAccount[_to].length == 0) {
+        if (autoBindEnabled && walletToAccount[msg.sender] == NONE) {
             _bindAccount(msg.sender, _to);
         }
-        require(walletsOfAccount[_to].length >0,  "no bind");
         
         records[_sn] = msg.sender;
         _deposit(_token, _amount);
