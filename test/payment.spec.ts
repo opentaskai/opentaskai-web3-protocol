@@ -176,12 +176,35 @@ const testCase = async (_tokenName:string = 'ETH') => {
       await expect(payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(0, tokenAddr))).to.be.revertedWith('zero');
     });
 
+    it('deposit mult-wallet to one account', async () => { 
+      sn = uuid();
+      let param: any = await payFix.signDepositData(user1Account, tokenAddr, depositAmount, frozenAmount, sn, expired);
+      LogConsole.debug('signDepositData param:', param);
+
+      let tx = await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      let receipt:any = await tx.wait()
+      LogConsole.info('deposit gasUsed:', receipt.gasUsed);
+      LogConsole.debug('deposit events:', receipt.events);
+      expect(tx).to.emit(payment, 'DepositLog')
+      .withArgs(param.sn, param.token, param.to, param.amount, param.frozen, owner.address)
+
+      param = await payFix.signDepositData(user1Account, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      tx = await payment.connect(user3).deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      receipt = await tx.wait();
+      LogConsole.debug('deposit events:', receipt.events);
+      expect(tx).to.emit(payment, 'DepositLog')
+      .withArgs(param.sn, param.token, param.to, param.amount, param.frozen, user3.address)
+    });
+
     it('deposit', async () => {
       let ownerBalance = await getBalance(owner);
       LogConsole.debug('owner balance:', ownerBalance);
 
       let userBalance = await getBalance(user1);
       LogConsole.debug('user balance:', userBalance);
+
+      const maxWalletCount = await payment.maxWalletCount()
+      LogConsole.debug('maxWalletCount:', maxWalletCount);
 
       sn = uuid();
       let param: any = await payFix.signDepositData(user1Account, tokenAddr, depositAmount, frozenAmount, sn, expired);
@@ -194,7 +217,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
 
       expect(tx).to.emit(payment, 'DepositLog')
       .withArgs(param.sn, param.token, param.to, param.amount, param.frozen, owner.address)
-      
+
       let ownerBalance2 = await getBalance(owner);
       res = ownerBalance.sub(ownerBalance2)
       LogConsole.debug('owner balance:', res);
@@ -236,7 +259,6 @@ const testCase = async (_tokenName:string = 'ETH') => {
       res = await payment.getMultiUserAssets([user1Account, user3Account], [tokenAddr, tokenAddr]);
       LogConsole.debug('getMultiUserAssets:', res);
       expect(res.length).to.equal(2);
-
 
       let user3bindedWallets = await payment.getWalletsOfAccount(user3Account);
       LogConsole.debug('user1bindedWallets:', user3bindedWallets);

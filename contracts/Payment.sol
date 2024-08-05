@@ -292,7 +292,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _amount, _frozen, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
-        if (autoBindEnabled && walletToAccount[msg.sender] == NONE) {
+        if (autoBindEnabled && walletToAccount[msg.sender] == NONE && walletsOfAccount[_to].length == 0) {
             _bindAccount(msg.sender, _to);
         }
         
