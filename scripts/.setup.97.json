@@ -1,7 +1,7 @@
 [
     {
         "call": true,
-        "called": false,
+        "called": true,
         "functionName": "changeAdmin",
         "contractName": "Config",
         "contractAddr": "",
