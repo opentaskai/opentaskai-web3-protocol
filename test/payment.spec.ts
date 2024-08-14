@@ -302,17 +302,19 @@ const testCase = async (_tokenName:string = 'ETH') => {
       let userBalance = await getBalance(user1);
       LogConsole.debug('user balance:', userBalance);
 
-      
+      res = await payment.autoBindEnabled();
+      LogConsole.debug('autoBindEnabled:', res);
+
       let param: any = await payFix.signDepositData(user1Account, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
       LogConsole.trace('signDepositData param:', param);
       await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
       
-      param = await payFix.signWithdrawData(user1.address, tokenAddr, availableAmount, frozenAmount, uuid(), expired);
+      param = await payFix.signWithdrawData(user1Account, user1.address, tokenAddr, availableAmount, frozenAmount, uuid(), expired);
       LogConsole.trace('signWithdrawData param:', param);
 
-      await expect(payment.connect(user1).withdraw(payment.address, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid signature');
+      await expect(payment.connect(user1).withdraw(param.from, payment.address, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid signature');
       
-      let tx = await payment.connect(user1).withdraw(param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact);
+      let tx = await payment.connect(user1).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact);
       const receipt:any = await tx.wait()
       LogConsole.info('withdraw gasUsed:', receipt.gasUsed);
       LogConsole.debug('withdraw events:', receipt.events[0].args);
@@ -328,8 +330,42 @@ const testCase = async (_tokenName:string = 'ETH') => {
         expect(userBalance2).to.equal(userBalance.add(param.available).add(param.frozen));
       }
       
-      await expect(payment.connect(user1).withdraw(param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
+      await expect(payment.connect(user1).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
       
+    });
+
+    it('withdraw bind enable', async () => {
+      let ownerBalance = await getBalance(owner);
+      LogConsole.debug('owner balance:', ownerBalance);
+
+      let userBalance = await getBalance(user1);
+      LogConsole.debug('user balance:', userBalance);
+
+      res = await payment.autoBindEnabled();
+      LogConsole.debug('autoBindEnabled:', res);
+      expect(res).to.equal(false);
+
+      await payment.setAutoBindEnabled(true);
+      res = await payment.autoBindEnabled();
+      LogConsole.debug('autoBindEnabled:', res);
+      expect(res).to.equal(true);
+
+      let param: any = await payFix.signDepositData(user1Account, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      LogConsole.trace('signDepositData param:', param);
+      await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      
+      param = await payFix.signWithdrawData(user1Account, user1.address, tokenAddr, availableAmount, frozenAmount, uuid(), expired);
+      LogConsole.trace('signWithdrawData param:', param);
+
+      await expect(payment.connect(user2).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid from account');
+      
+      let tx = await payment.connect(user1).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact);
+      const receipt:any = await tx.wait()
+      LogConsole.info('withdraw gasUsed:', receipt.gasUsed);
+      LogConsole.debug('withdraw events:', receipt.events[0].args);
+
+      expect(tx).to.emit(payment, 'WithdrawLog')
+      .withArgs(param.sn, param.token, user1Account, param.to, param.available, param.frozen, user1.address)
     });
 
     it('freeze', async () => {

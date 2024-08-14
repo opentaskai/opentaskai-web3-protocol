@@ -103,7 +103,6 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         domainHash = NONE;
         enabled = true;
         nosnEnabled = false;
-        autoBindEnabled = true;
 
         owner = msg.sender;
         signer = msg.sender;
@@ -313,6 +312,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     /**
     * @dev Executes a withdrawal operation with additional parameters and signature verification.
     *
+    * @param _from Sender's account number.
     * @param _to The address to send the withdrawn funds to.
     * @param _token The address of the token being withdrawn. If native ETH, use zero address.
     * @param _available The amount of available (not frozen) tokens to withdraw.
@@ -322,6 +322,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     * @param _signature The digital signature for authenticating the request.
     */
     function withdraw(
+        bytes32 _from,
         address _to, 
         address _token, 
         uint _available, 
@@ -332,19 +333,20 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     ) external nonReentrant onlyEnabled {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _available, _frozen, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_from, _to, _token, _available, _frozen, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        
+        if (autoBindEnabled && walletToAccount[msg.sender] != _from) {
+            revert('invalid from account');
+        }
         records[_sn] = msg.sender;
-        bytes32 from = walletToAccount[msg.sender];
-        Account storage userAccount = userAccounts[from][_token];
+        Account storage userAccount = userAccounts[_from][_token];
         require(userAccount.available >= _available, 'insufficient available');
         require(userAccount.frozen >= _frozen, 'insufficient frozen');
         userAccount.available = userAccount.available - _available;
         userAccount.frozen = userAccount.frozen - _frozen;
         
         _withdraw(_to, _token, _available + _frozen);
-        emit WithdrawLog(_sn, _token, from, _to, _available, _frozen, msg.sender);
+        emit WithdrawLog(_sn, _token, _from, _to, _available, _frozen, msg.sender);
     }
 
     /**

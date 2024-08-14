@@ -107,6 +107,7 @@ export interface PaymentFixture {
         domain?: TypedDataDomain
     ): Promise<any>,
     signWithdrawData (
+        from: string,
         to: string,
         token: string,
         available: (string | number | BigNumber),
@@ -232,6 +233,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
     }
 
     const signWithdrawData = async (
+        from: string,
         to: string,
         token: string,
         available: (string | number | BigNumber),
@@ -241,10 +243,10 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         domain?: TypedDataDomain
     ): Promise<any> => {
         sn = hexToBytes32(sn);
-        const types = ['address', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [to, token, available, frozen, sn, expired, chainId, payment.address]
+        const types = ['bytes32', 'address', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
+        const values = [from, to, token, available, frozen, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
-        return {to, token, available, frozen, sn, expired, sign};
+        return {from, to, token, available, frozen, sn, expired, sign};
     }
 
     const signFreezeData = async (
