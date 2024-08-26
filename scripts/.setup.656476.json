@@ -38,27 +38,5 @@
         "args": [
             "${feeWallet.address}"
         ]
-    },
-    {
-        "call": true,
-        "called": true,
-        "name": "USDT",
-        "functionName": "setClaimAmount",
-        "contractName": "ERC20Token",
-        "contractAddr": "",
-        "args": [
-            "10000000000000000000000"
-        ]
-    },
-    {
-        "call": true,
-        "called": true,
-        "name": "USDC",
-        "functionName": "setClaimAmount",
-        "contractName": "ERC20Token",
-        "contractAddr": "",
-        "args": [
-            "10000000000000000000000"
-        ]
     }
 ]

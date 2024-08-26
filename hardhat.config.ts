@@ -21,6 +21,7 @@
   "ArbitrumscanApiKey": "",
   "MaticscanApiKey": "",
   "BscscanApiKey": "",
+  "opencampusApiKey": "",
 };
  
  let filePath = path.join(USER_HOME+'/.hardhat.data.json');
@@ -122,6 +123,10 @@
       url: `https://pacific-rpc.manta.network/http`,
       accounts: [data.PrivateKey]
     },
+    opencampus_sepolia: {
+      url: `https://open-campus-codex-sepolia.drpc.org`,
+      accounts: [data.PrivateKey]
+    },
    },
    etherscan: {
       apiKey: {
@@ -132,6 +137,7 @@
         polygon: data.MaticscanApiKey,
         bsc: data.BscscanApiKey,
         bscTestnet: data.BscscanApiKey,
+        opencampus: data.opencampusApiKey,
     }
    },
    paths: {
