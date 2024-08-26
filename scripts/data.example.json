@@ -48,15 +48,6 @@
 		"upgraded": false,
 		"verified": false
 	},
-	"Payment": {
-	  "proxy": true,
-	  "address": "",
-	  "constructorArgs": [],
-	  "upgradedAddress": "",
-	  "deployed": false,
-	  "upgraded": false,
-	  "verified": false
-	},
 	"AIGenesis": {
 		"proxy": true,
 		"address": "",
@@ -69,5 +60,14 @@
 		"deployed": false,
 		"upgraded": false,
 		"verified": false
+	},
+	"Payment": {
+	  "proxy": true,
+	  "address": "",
+	  "constructorArgs": [],
+	  "upgradedAddress": "",
+	  "deployed": false,
+	  "upgraded": false,
+	  "verified": false
 	}
 }
