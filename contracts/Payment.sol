@@ -335,8 +335,8 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(_expired > block.timestamp, "request is expired");
         bytes32 messageHash = keccak256(abi.encodePacked(_from, _to, _token, _available, _frozen, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        if (autoBindEnabled && walletToAccount[msg.sender] != _from) {
-            revert('invalid from account');
+        if (!checkAccountBound(_from, msg.sender)) {
+            revert("forbidden");
         }
         records[_sn] = msg.sender;
         Account storage userAccount = userAccounts[_from][_token];
@@ -372,8 +372,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(_expired > block.timestamp, "request is expired");
         bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        bytes32 operatorAccount = walletToAccount[msg.sender];
-        if (operatorAccount != _account && msg.sender != admin()) {
+        if (!checkAccountBound(_account, msg.sender) && msg.sender != admin()) {
             revert("forbidden");
         }
         Account storage userAccount = userAccounts[_account][_token];
@@ -412,11 +411,10 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(_amount > _fee, "amount must greater than fee");
         bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _fee, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        bytes32 operatorAccount = walletToAccount[msg.sender];
-        if (operatorAccount != _account && msg.sender != admin()) {
+        if (!checkAccountBound(_account, msg.sender) && msg.sender != admin()) {
             revert("forbidden");
         }
-        
+
         TradeData memory data = TradeData({
             account: _account,
             token: _token,
@@ -452,8 +450,8 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(_deal.available + _deal.frozen == _deal.amount + _deal.fee && _deal.amount + _deal.fee > 0 && _deal.paid >= _deal.frozen + _deal.excessFee && _deal.frozen >= _deal.excessFee, "invalid deal");
         bytes32 messageHash = keccak256(abi.encodePacked(_out, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _deal.paid, _deal.excessFee, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        bool isFrom = foundAccount(_deal.from, msg.sender);
-        bool isTo = foundAccount(_deal.to, msg.sender);
+        bool isFrom = checkAccountBound(_deal.from, msg.sender);
+        bool isTo = checkAccountBound(_deal.to, msg.sender);
         if( !(isFrom || isTo) && msg.sender != admin()) {
             revert("forbidden");
         }
@@ -523,8 +521,8 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(_expired > block.timestamp, "request is expired");
         bytes32 messageHash = keccak256(abi.encodePacked(_sn, _userA.account, _userA.token, _userA.amount, _userA.fee, _userB.account, _userB.token, _userB.amount, _userB.fee, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
-        bool a = foundAccount(_userA.account, msg.sender);
-        bool b = foundAccount(_userB.account, msg.sender);
+        bool a = checkAccountBound(_userA.account, msg.sender);
+        bool b = checkAccountBound(_userB.account, msg.sender);
         if( !(a || b) && msg.sender != admin()) {
             revert("forbidden");
         }
@@ -643,12 +641,21 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     }
 
     function indexAccount(bytes32 _account, address _wallet) internal view returns (uint) {
-        uint index = walletsOfAccount[_account].length;
-        for(uint i; i < walletsOfAccount[_account].length; i++) {
+        uint len = walletsOfAccount[_account].length;
+        for(uint i; i < len; i++) {
             if(_wallet == walletsOfAccount[_account][i]) {
-                index = i;
+                return i;
             }
         }
-        return index;
+        return len;
+    }
+
+    function checkAccountBound(bytes32 _account, address _wallet) public view returns (bool) {
+        if (walletsOfAccount[_account].length > 0) {
+            return foundAccount(_account, _wallet);
+        } else {
+            if (!autoBindEnabled) return true;
+            return false;
+        }
     }
 }

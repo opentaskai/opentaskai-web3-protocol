@@ -357,7 +357,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       param = await payFix.signWithdrawData(user1Account, user1.address, tokenAddr, availableAmount, frozenAmount, uuid(), expired);
       LogConsole.trace('signWithdrawData param:', param);
 
-      await expect(payment.connect(user2).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid from account');
+      await expect(payment.connect(user2).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('forbidden');
       
       let tx = await payment.connect(user1).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact);
       const receipt:any = await tx.wait()
