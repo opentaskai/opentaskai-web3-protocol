@@ -382,6 +382,23 @@ const testCase = async (_tokenName:string = 'ETH') => {
       .withArgs(param.sn, param.token, user1Account, param.to, param.available, param.frozen, user1.address)
     });
 
+      it('withdraw for fee account', async () => {
+      let param: any = await payFix.signDepositData(feeToAccount, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
+      LogConsole.trace('signDepositData param:', param);
+      await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
+      
+      param = await payFix.signWithdrawData(feeToAccount, user1.address, tokenAddr, availableAmount, frozenAmount, uuid(), expired);
+      LogConsole.trace('signWithdrawData param:', param);
+      let withdrawParams = pickWithdrawParams(param);
+      let tx = await payment.connect(user1).withdraw(withdrawParams);
+      const receipt:any = await tx.wait()
+      LogConsole.info('withdraw gasUsed:', receipt.gasUsed);
+      LogConsole.debug('withdraw events:', receipt.events[0].args);
+
+      expect(tx).to.emit(payment, 'WithdrawLog')
+      .withArgs(param.sn, param.token, feeToAccount, param.to, param.available, param.frozen, user1.address)
+    });
+
     it('freeze', async () => {
       await payment.simpleDeposit(user1Account, tokenAddr, depositAmount, getPayOption(depositAmount, tokenAddr));
       let userAccount = await payment.userAccounts(user1Account, tokenAddr);
