@@ -382,7 +382,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       .withArgs(param.sn, param.token, user1Account, param.to, param.available, param.frozen, user1.address)
     });
 
-      it('withdraw for fee account', async () => {
+      it('withdraw from fee account to other account', async () => {
       let param: any = await payFix.signDepositData(feeToAccount, tokenAddr, depositAmount, frozenAmount, uuid(), expired);
       LogConsole.trace('signDepositData param:', param);
       await payment.deposit(param.to, param.token, param.amount, param.frozen, param.sn, param.expired, param.sign.compact, getPayOption(depositAmount, tokenAddr));
