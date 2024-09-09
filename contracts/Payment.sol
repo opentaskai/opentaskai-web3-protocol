@@ -45,6 +45,17 @@ struct TradeData {
     uint fee;
 }
 
+struct WithdrawParams {
+    bytes32 from; // Sender's account number.
+    address to;   // The address to send the withdrawn funds to.
+    address token;  // The address of the token being withdrawn. If native ETH, use zero address.
+    uint256 available;  // The amount of available (not frozen) tokens to withdraw.
+    uint256 frozen;  // The amount of frozen tokens to withdraw.
+    bytes32 sn;  // A unique serial number for the withdrawal operation.
+    uint expired;  // Timestamp after which the withdrawal request is considered expired.
+    bytes signature;  // The digital signature for authenticating the request.
+}
+
 contract Payment is Configable, ReentrancyGuard, Initializable {
     bytes32 NONE;
     uint id;
@@ -311,42 +322,37 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
 
     /**
     * @dev Executes a withdrawal operation with additional parameters and signature verification.
-    *
-    * @param _from Sender's account number.
-    * @param _to The address to send the withdrawn funds to.
-    * @param _token The address of the token being withdrawn. If native ETH, use zero address.
-    * @param _available The amount of available (not frozen) tokens to withdraw.
-    * @param _frozen The amount of frozen tokens to withdraw.
-    * @param _sn A unique serial number for the withdrawal operation.
-    * @param _expired Timestamp after which the withdrawal request is considered expired.
-    * @param _signature The digital signature for authenticating the request.
+    * Requires the withdrawal request not to be expired and the provided serial number (sn) to be unique.
+    * Validates the sender's signature to ensure the authenticity of the withdrawal request.
+    * Confirms the sender has enough available and frozen funds for the withdrawal.
     */
-    function withdraw(
-        bytes32 _from,
-        address _to, 
-        address _token, 
-        uint _available, 
-        uint _frozen,
-        bytes32 _sn,
-        uint _expired,
-        bytes calldata _signature
-    ) external nonReentrant onlyEnabled {
-        require(records[_sn] == address(0), "record already exists");
-        require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_from, _to, _token, _available, _frozen, _sn, _expired, id, address(this)));
-        require(verifyMessage(messageHash, _signature), "invalid signature");
-        if (!checkAccountBound(_from, msg.sender)) {
+    function withdraw(WithdrawParams calldata _params) public nonReentrant onlyEnabled {
+        require(records[_params.sn] == address(0), "record already exists");
+        require(_params.expired > block.timestamp, "request is expired");
+        bytes32 messageHash = keccak256(abi.encodePacked(_params.from, _params.to, _params.token, _params.available, _params.frozen, _params.sn, _params.expired, id, address(this)));
+        require(verifyMessage(messageHash, _params.signature), "invalid signature");
+        if (_params.from != feeToAccount && !checkAccountBound(_params.from, msg.sender)) {
             revert("forbidden");
         }
-        records[_sn] = msg.sender;
-        Account storage userAccount = userAccounts[_from][_token];
-        require(userAccount.available >= _available, 'insufficient available');
-        require(userAccount.frozen >= _frozen, 'insufficient frozen');
-        userAccount.available = userAccount.available - _available;
-        userAccount.frozen = userAccount.frozen - _frozen;
+        records[_params.sn] = msg.sender;
+        Account storage userAccount = userAccounts[_params.from][_params.token];
+        require(userAccount.available >= _params.available, 'insufficient available');
+        require(userAccount.frozen >= _params.frozen, 'insufficient frozen');
+        userAccount.available = userAccount.available - _params.available;
+        userAccount.frozen = userAccount.frozen - _params.frozen;
         
-        _withdraw(_to, _token, _available + _frozen);
-        emit WithdrawLog(_sn, _token, _from, _to, _available, _frozen, msg.sender);
+        _withdraw(_params.to, _params.token, _params.available + _params.frozen);
+        emit WithdrawLog(_params.sn, _params.token, _params.from, _params.to, _params.available, _params.frozen, msg.sender);
+    }
+
+    /**
+    * @dev Allows for batch processing of multiple withdrawal operations in a single transaction.
+    * Each withdrawal in the batch is processed individually using the 'withdraw' function.
+    */
+    function batchWithdraw(WithdrawParams[] calldata _params) external {
+        for(uint i; i<_params.length; i++) {
+            withdraw(_params[i]);
+        }
     }
 
     /**

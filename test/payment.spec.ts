@@ -59,6 +59,19 @@ async function getBalance(_user: SignerWithAddress) {
   }
 }
 
+function pickWithdrawParams(param: any) {
+  return {
+    from: param.from,
+    to: param.to,
+    token: param.token, 
+    available: param.available, 
+    frozen: param.frozen, 
+    sn: param.sn, 
+    expired: param.expired, 
+    signature: param.sign.compact
+  }
+}
+
 const testCase = async (_tokenName:string = 'ETH') => {
   describe('Deal for '+ _tokenName, async () => {
     let loadFixTure: ReturnType<typeof createFixtureLoader>;
@@ -311,10 +324,11 @@ const testCase = async (_tokenName:string = 'ETH') => {
       
       param = await payFix.signWithdrawData(user1Account, user1.address, tokenAddr, availableAmount, frozenAmount, uuid(), expired);
       LogConsole.trace('signWithdrawData param:', param);
-
-      await expect(payment.connect(user1).withdraw(param.from, payment.address, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid signature');
-      
-      let tx = await payment.connect(user1).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact);
+      let withdrawParams = pickWithdrawParams(param);
+      withdrawParams.to = payment.address;
+      await expect(payment.connect(user1).withdraw(withdrawParams)).to.be.revertedWith('invalid signature');
+      withdrawParams.to = param.to;
+      let tx = await payment.connect(user1).withdraw(withdrawParams);
       const receipt:any = await tx.wait()
       LogConsole.info('withdraw gasUsed:', receipt.gasUsed);
       LogConsole.debug('withdraw events:', receipt.events[0].args);
@@ -330,7 +344,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
         expect(userBalance2).to.equal(userBalance.add(param.available).add(param.frozen));
       }
       
-      await expect(payment.connect(user1).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
+      await expect(payment.connect(user1).withdraw(withdrawParams)).to.be.revertedWith('record already exists');
       
     });
 
@@ -356,10 +370,10 @@ const testCase = async (_tokenName:string = 'ETH') => {
       
       param = await payFix.signWithdrawData(user1Account, user1.address, tokenAddr, availableAmount, frozenAmount, uuid(), expired);
       LogConsole.trace('signWithdrawData param:', param);
-
-      await expect(payment.connect(user2).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('forbidden');
+      let withdrawParams = pickWithdrawParams(param);
+      await expect(payment.connect(user2).withdraw(withdrawParams)).to.be.revertedWith('forbidden');
       
-      let tx = await payment.connect(user1).withdraw(param.from, param.to, param.token, param.available, param.frozen, param.sn, param.expired, param.sign.compact);
+      let tx = await payment.connect(user1).withdraw(withdrawParams);
       const receipt:any = await tx.wait()
       LogConsole.info('withdraw gasUsed:', receipt.gasUsed);
       LogConsole.debug('withdraw events:', receipt.events[0].args);
