@@ -561,6 +561,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         }
 
         if(_token != address(0)) {
+            require(msg.value == 0, 'no ether needed');
             TransferHelper.safeTransferFrom(_token, msg.sender, address(this), _amount);
         }
 

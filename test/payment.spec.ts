@@ -155,9 +155,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
       expect(userAccount.available).to.equal(depositAmount);
       expect(userAccount.frozen).to.equal(BigNumber.from(0));
 
-      await payment.simpleDeposit(user1Account, tokenAddr, depositAmount, {
-        value: depositAmount
-      });
+      await payment.simpleDeposit(user1Account, tokenAddr, depositAmount, getPayOption(depositAmount, tokenAddr));
       
       userAccount = await payment.userAccounts(user1Account, tokenAddr);
       LogConsole.debug('userAccount:', userAccount);
