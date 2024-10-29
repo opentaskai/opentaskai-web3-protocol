@@ -1172,8 +1172,8 @@ describe('Payment', async () => {
   
   await testBase();
 
-  // await testCase();
+  await testCase();
 
-  // await testCase('usdt');
+  await testCase('usdt');
   
 })

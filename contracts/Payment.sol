@@ -562,7 +562,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
 
         if(_token != address(0)) {
             require(msg.value == 0, 'no ether needed');
-            TransferHelper.safeTransferFrom(_token, msg.sender, address(this), _amount);
+            TransferHelper.safeTransferFrom(IERC20(_token), msg.sender, address(this), _amount);
         }
 
         return _amount;
@@ -575,7 +575,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         if(_token == address(0)) {
             TransferHelper.safeTransferETH(_to, _amount);
         } else {
-            TransferHelper.safeTransfer(_token, _to, _amount);
+            TransferHelper.safeTransfer(IERC20(_token), _to, _amount);
         }
 
         return _amount;
