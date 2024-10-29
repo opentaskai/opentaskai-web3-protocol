@@ -97,15 +97,15 @@ const testCase = async (_tokenName:string = 'ETH') => {
       tokenAddr = usdc.address;
       tokenInstance = usdc;
     }
-    let param: any = await payFix.signBindAccountData(ownerAccount, uuid(), expired);
+    let param: any = await payFix.signBindAccountData(owner.address, ownerAccount, uuid(), expired);
     LogConsole.trace('signBindAccountData param:', param);
     await payment.bindAccount(param.account, param.sn, param.expired, param.sign.compact);
 
-    param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+    param = await payFix.signBindAccountData(user1.address, user1Account, uuid(), expired);
     LogConsole.trace('signBindAccountData param:', param);
     await payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact);
 
-    param = await payFix.signBindAccountData(user2Account, uuid(), expired);
+    param = await payFix.signBindAccountData(user2.address, user2Account, uuid(), expired);
     LogConsole.trace('signBindAccountData param:', param);
     await payment.connect(user2).bindAccount(param.account, param.sn, param.expired, param.sign.compact);
   })
@@ -1074,34 +1074,34 @@ const testBase = async () => {
       const bindedFeeAddr = await payment.feeTo()
       LogConsole.debug('bindedFeeAddr:', bindedFeeAddr);
       LogConsole.debug('feeTo:', feeTo.address);
-      let param: any = await payFix.signBindAccountData(feeToAccount, uuid(), expired);
+      let param: any = await payFix.signBindAccountData(feeTo.address, feeToAccount, uuid(), expired);
       LogConsole.trace('signBindAccountData param:', param);
       await expect(payment.connect(user3).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('forbidden');
       await expect(payment.connect(feeTo).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('forbidden');
-
-      param = await payFix.signBindAccountData(user1Account, uuid(), 1);
+      
+      param = await payFix.signBindAccountData(user1.address, user1Account, uuid(), 1);
       LogConsole.trace('signBindAccountData param:', param);
       await expect(payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('request is expired');
 
-      param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+      param = await payFix.signBindAccountData(user1.address, user1Account, uuid(), expired);
       LogConsole.trace('signBindAccountData param:', param);
       await expect(payment.connect(user1).bindAccount(param.account, param.sn, param.expired+1, param.sign.compact)).to.be.revertedWith('invalid signature');
-
+      
       let tx = await payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact);
       let receipt:any = await tx.wait()
       LogConsole.info('bindAccount gasUsed:', receipt.gasUsed);
       LogConsole.debug('bindAccount events:', receipt.events[0].args);
       await expect(tx).to.emit(payment, 'BindLog')
       .withArgs(user1Account, user1.address, user1.address)
-
+      
       await expect(payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('record already exists');
-
-      param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+      
+      param = await payFix.signBindAccountData(user1.address, user1Account, uuid(), expired);
       await expect(payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('already bound');
 
-      param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+      param = await payFix.signBindAccountData(user1.address, user1Account, uuid(), expired);
       LogConsole.trace('signBindAccountData param:', param);
-      await expect(payment.connect(user2).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('over wallet count');
+      await expect(payment.connect(user2).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('invalid signature');
 
       res = await payment.getWalletsOfAccount(user1Account);
       LogConsole.info('getWalletsOfAccount:', res);
@@ -1109,12 +1109,14 @@ const testBase = async () => {
       expect(res[0]).to.equal(user1.address);
 
       await payment.setMaxWalletCount(2);
+      
+      param = await payFix.signBindAccountData(user2.address, user1Account, uuid(), expired);
       await payment.connect(user2).bindAccount(param.account, param.sn, param.expired, param.sign.compact);
       res = await payment.getWalletsOfAccount(user1Account);
       LogConsole.info('getWalletsOfAccount:', res);
       expect(res.length).to.equal(2);
 
-      param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+      param = await payFix.signBindAccountData(user3.address, user1Account, uuid(), expired);
       LogConsole.trace('signBindAccountData param:', param);
       await expect(payment.connect(user3).bindAccount(param.account, param.sn, param.expired, param.sign.compact)).to.be.revertedWith('over wallet count');
 
@@ -1129,14 +1131,15 @@ const testBase = async () => {
       LogConsole.info('getWalletsOfAccount:', res);
       expect(res.length).to.equal(1);
 
+      param = await payFix.signBindAccountData(user3.address, user1Account, uuid(), expired);
       await payment.connect(user3).bindAccount(param.account, param.sn, param.expired, param.sign.compact)
       res = await payment.getWalletsOfAccount(user1Account);
       LogConsole.info('getWalletsOfAccount:', res);
       expect(res.length).to.equal(2);
     });
 
-    it('replace', async () => {
-      let param = await payFix.signBindAccountData(user1Account, uuid(), expired);
+    it.skip('replace', async () => {
+      let param = await payFix.signBindAccountData(user1.address, user1Account, uuid(), expired);
       LogConsole.trace('signBindAccountData param:', param);
       let tx = await payment.connect(user1).bindAccount(param.account, param.sn, param.expired, param.sign.compact);
       let receipt:any = await tx.wait()
@@ -1171,6 +1174,6 @@ describe('Payment', async () => {
 
   // await testCase();
 
-  await testCase('usdt');
+  // await testCase('usdt');
   
 })

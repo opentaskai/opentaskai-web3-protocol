@@ -183,7 +183,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
         require(_account != feeToAccount, "forbidden");
-        bytes32 messageHash = keccak256(abi.encodePacked(_account, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _account, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         _bindAccount(msg.sender, _account);

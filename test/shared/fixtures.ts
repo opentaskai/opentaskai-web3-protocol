@@ -85,6 +85,7 @@ export interface PaymentFixture {
     payment: Payment,
     config: Config,
     signBindAccountData (
+        user: string,
         account: string,
         sn: string,
         expired: (string | number | BigNumber),
@@ -187,6 +188,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
     await usdt.connect(user3).approve(payment.address, expandWithDecimals(10_000))
 
     const signBindAccountData = async (
+        user: string,
         account: string,
         sn: string,
         expired: (string | number | BigNumber),
@@ -194,10 +196,10 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
     ): Promise<any> => {
         account = hexToBytes32(account);
         sn = hexToBytes32(sn);
-        const types = ['bytes32', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [account, sn, expired, chainId, payment.address]
+        const types = ['address', 'bytes32', 'bytes32', 'uint256', 'uint256', 'address'];
+        const values = [user, account, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
-        return {account, sn, expired, sign};
+        return {user, account, sn, expired, sign};
     }
 
     const signReplaceAccountData = async (
