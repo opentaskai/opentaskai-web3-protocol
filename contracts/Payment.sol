@@ -233,7 +233,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(walletToAccount[_wallet] == _account, 'no bound');
         require(_expired > block.timestamp, "request is expired");
         require(_account != feeToAccount, "forbidden");
-        bytes32 messageHash = keccak256(abi.encodePacked(_account, _wallet, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _account, _wallet, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         _unbindAccount(_wallet);
@@ -299,7 +299,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     ) external payable nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_to, _token, _amount, _frozen, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _to, _token, _amount, _frozen, _sn, _expired, id, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         if (autoBindEnabled && walletToAccount[msg.sender] == NONE && walletsOfAccount[_to].length == 0) {

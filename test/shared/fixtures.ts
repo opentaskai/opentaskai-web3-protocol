@@ -92,6 +92,7 @@ export interface PaymentFixture {
         domain?: TypedDataDomain
     ): Promise<any>,
     signReplaceAccountData (
+        user: string,
         account: string,
         wallet: string,
         sn: string,
@@ -99,6 +100,7 @@ export interface PaymentFixture {
         domain?: TypedDataDomain
     ): Promise<any>,
     signDepositData (
+        user: string,
         to: string,
         token: string,
         available: (string | number | BigNumber),
@@ -203,6 +205,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
     }
 
     const signReplaceAccountData = async (
+        user: string,
         account: string,
         wallet: string,
         sn: string,
@@ -211,13 +214,14 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
     ): Promise<any> => {
         account = hexToBytes32(account);
         sn = hexToBytes32(sn);
-        const types = ['bytes32', 'address', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [account, wallet, sn, expired, chainId, payment.address]
+        const types = ['address', 'bytes32', 'address', 'bytes32', 'uint256', 'uint256', 'address'];
+        const values = [user, account, wallet, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
-        return {account, wallet, sn, expired, sign};
+        return {user, account, wallet, sn, expired, sign};
     }
 
     const signDepositData = async (
+        user: string,
         to: string,
         token: string,
         amount: (string | number | BigNumber),
@@ -228,8 +232,8 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
     ): Promise<any> => {
         to = hexToBytes32(to);
         sn = hexToBytes32(sn);
-        const types = ['bytes32', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [to, token, amount, frozen, sn, expired, chainId, payment.address]
+        const types = ['address', 'bytes32', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
+        const values = [user, to, token, amount, frozen, sn, expired, chainId, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {to, token, amount, frozen, sn, expired, sign};
     }
