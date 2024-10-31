@@ -32,13 +32,22 @@ export const signData = async (
   values: (string | boolean | number | BigNumber)[],
   domain?: TypedDataDomain
 ): Promise<Signature> => {
+  // https://docs.ethers.io/v5/api/utils/abi/coder/#AbiCoder--methods
+  const hash = computeMessageHash(types, values);
+  return signMessageHash(signer, hash, domain);
+};
+
+export const signMessageHash = async (
+  signer: string,
+  hash: string,
+  domain?: TypedDataDomain
+): Promise<Signature> => {
 
   if (domain) {
-    return await signTypedData(signer, types, values, domain);
+    return await signTypedMessageHash(signer, hash, domain);
   }
 
   // https://docs.ethers.io/v5/api/utils/abi/coder/#AbiCoder--methods
-  const hash = keccak256(solidityPack(types, values));
   // LogConsole.debug('signData hash', hash);
   // Compute the digest
   const digest = keccak256(
@@ -60,10 +69,20 @@ export const signTypedData = async (
   values: (string | boolean | number | BigNumber)[],
   domain: TypedDataDomain
 ): Promise<Signature> => {
+  // https://docs.ethers.io/v5/api/utils/abi/coder/#AbiCoder--methods
+  const hash = computeMessageHash(types, values);
+  return signTypedMessageHash(signer, hash, domain);
+};
+
+
+export const signTypedMessageHash = async (
+  signer: string,
+  hash: string,
+  domain: TypedDataDomain
+): Promise<Signature> => {
   const domainSeparator = _TypedDataEncoder.hashDomain(domain);
 
   // https://docs.ethers.io/v5/api/utils/abi/coder/#AbiCoder--methods
-  const hash = keccak256(solidityPack(types, values));
 
   // Compute the digest
   const digest = keccak256(
@@ -81,4 +100,8 @@ export const signTypedData = async (
 
 export const computeDomainSeparator = (domain: TypedDataDomain): string => {
   return _TypedDataEncoder.hashDomain(domain);
+};
+
+export const computeMessageHash = (types: string[], values: (string | boolean | number | BigNumber)[]): string => {
+  return keccak256(solidityPack(types, values));
 };

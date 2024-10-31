@@ -5,7 +5,7 @@ import { Payment } from '../../typechain/Payment'
 import { NFT } from '../../typechain/NFT'
 import { Config } from '../../typechain/Config'
 import { Fixture } from 'ethereum-waffle'
-import { signData, computeDomainSeparator } from './signature-helper'
+import { signData, computeMessageHash } from './signature-helper'
 import { TypedDataDomain } from "@ethersproject/abstract-signer"
 import { Signature } from "@ethersproject/bytes"
 import { expandWithDecimals } from './numberDecimals'
@@ -199,7 +199,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         account = hexToBytes32(account);
         sn = hexToBytes32(sn);
         const types = ['address', 'bytes32', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [user, account, sn, expired, chainId, payment.address]
+        const values = [user, account, sn, expired, chainId+1, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {user, account, sn, expired, sign};
     }
@@ -215,7 +215,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         account = hexToBytes32(account);
         sn = hexToBytes32(sn);
         const types = ['address', 'bytes32', 'address', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [user, account, wallet, sn, expired, chainId, payment.address]
+        const values = [user, account, wallet, sn, expired, chainId+2, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {user, account, wallet, sn, expired, sign};
     }
@@ -233,7 +233,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         to = hexToBytes32(to);
         sn = hexToBytes32(sn);
         const types = ['address', 'bytes32', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [user, to, token, amount, frozen, sn, expired, chainId, payment.address]
+        const values = [user, to, token, amount, frozen, sn, expired, chainId+3, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {to, token, amount, frozen, sn, expired, sign};
     }
@@ -250,7 +250,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
     ): Promise<any> => {
         sn = hexToBytes32(sn);
         const types = ['bytes32', 'address', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [from, to, token, available, frozen, sn, expired, chainId, payment.address]
+        const values = [from, to, token, available, frozen, sn, expired, chainId+4, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {from, to, token, available, frozen, sn, expired, sign};
     }
@@ -266,7 +266,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         sn = hexToBytes32(sn);
         account = hexToBytes32(account);
         const types = ['bytes32', 'address', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [account, token, amount, sn, expired, chainId, payment.address]
+        const values = [account, token, amount, sn, expired, chainId+5, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {account, token, amount, sn, expired, sign};
     }
@@ -283,7 +283,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         sn = hexToBytes32(sn);
         account = hexToBytes32(account);
         const types = ['bytes32', 'address', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [account, token, amount, fee, sn, expired, chainId, payment.address]
+        const values = [account, token, amount, fee, sn, expired, chainId+6, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {account, token, amount, fee, sn, expired, sign};
     }
@@ -307,7 +307,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         from = hexToBytes32(from);
         to = hexToBytes32(to);
         const types = ['address', 'address', 'bytes32', 'bytes32', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'uint256', 'bytes32', 'uint256', 'uint256', 'address'];
-        const values = [out, token, from, to, available, frozen, amount, fee, paid, excessFee, sn, expired, chainId, payment.address]
+        const values = [out, token, from, to, available, frozen, amount, fee, paid, excessFee, sn, expired, chainId+7, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {out, token, from, to, available, frozen, amount, fee, paid, excessFee, sn, expired, sign};
     }
@@ -323,7 +323,7 @@ export const paymentFixture: Fixture<PaymentFixture> = async function ([owner, s
         userA.account = hexToBytes32(userA.account);
         userB.account = hexToBytes32(userB.account);
         const types = ['bytes32', 'bytes32', 'address', 'uint256',  'uint256', 'bytes32', 'address', 'uint256',  'uint256', 'uint256', 'uint256', 'address'];
-        const values = [sn, userA.account, userA.token, userA.amount, userA.fee, userB.account, userB.token, userB.amount, userB.fee, expired, chainId, payment.address]
+        const values = [sn, userA.account, userA.token, userA.amount, userA.fee, userB.account, userB.token, userB.amount, userB.fee, expired, chainId+8, payment.address]
         const sign = await signData(signer.address, types, values, domain);
         return {userA, userB, sn, expired, sign};
     }

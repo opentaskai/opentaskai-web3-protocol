@@ -183,7 +183,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
         require(_account != feeToAccount, "forbidden");
-        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _account, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _account, _sn, _expired, id+1, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         _bindAccount(msg.sender, _account);
@@ -233,7 +233,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(walletToAccount[_wallet] == _account, 'no bound');
         require(_expired > block.timestamp, "request is expired");
         require(_account != feeToAccount, "forbidden");
-        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _account, _wallet, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _account, _wallet, _sn, _expired, id+2, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         _unbindAccount(_wallet);
@@ -299,7 +299,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     ) external payable nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _to, _token, _amount, _frozen, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(msg.sender, _to, _token, _amount, _frozen, _sn, _expired, id+3, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         
         if (autoBindEnabled && walletToAccount[msg.sender] == NONE && walletsOfAccount[_to].length == 0) {
@@ -329,7 +329,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     function withdraw(WithdrawParams calldata _params) public nonReentrant onlyEnabled {
         require(records[_params.sn] == address(0), "record already exists");
         require(_params.expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_params.from, _params.to, _params.token, _params.available, _params.frozen, _params.sn, _params.expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_params.from, _params.to, _params.token, _params.available, _params.frozen, _params.sn, _params.expired, id+4, address(this)));
         require(verifyMessage(messageHash, _params.signature), "invalid signature");
         if (_params.from != feeToAccount && !checkAccountBound(_params.from, msg.sender)) {
             revert("forbidden");
@@ -376,7 +376,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     ) external nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _sn, _expired, id+5, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         if (!checkAccountBound(_account, msg.sender) && msg.sender != admin()) {
             revert("forbidden");
@@ -415,7 +415,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
         require(_amount > _fee, "amount must greater than fee");
-        bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _fee, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_account, _token, _amount, _fee, _sn, _expired, id+6, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         if (!checkAccountBound(_account, msg.sender) && msg.sender != admin()) {
             revert("forbidden");
@@ -454,7 +454,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
         require(_deal.available + _deal.frozen == _deal.amount + _deal.fee && _deal.amount + _deal.fee > 0 && _deal.paid >= _deal.frozen + _deal.excessFee && _deal.frozen >= _deal.excessFee, "invalid deal");
-        bytes32 messageHash = keccak256(abi.encodePacked(_out, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _deal.paid, _deal.excessFee, _sn, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_out, _deal.token, _deal.from, _deal.to, _deal.available, _deal.frozen, _deal.amount, _deal.fee, _deal.paid, _deal.excessFee, _sn, _expired, id+7, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         bool isFrom = checkAccountBound(_deal.from, msg.sender);
         bool isTo = checkAccountBound(_deal.to, msg.sender);
@@ -525,7 +525,7 @@ contract Payment is Configable, ReentrancyGuard, Initializable {
     ) external nonReentrant onlyEnabled returns(bool) {
         require(records[_sn] == address(0), "record already exists");
         require(_expired > block.timestamp, "request is expired");
-        bytes32 messageHash = keccak256(abi.encodePacked(_sn, _userA.account, _userA.token, _userA.amount, _userA.fee, _userB.account, _userB.token, _userB.amount, _userB.fee, _expired, id, address(this)));
+        bytes32 messageHash = keccak256(abi.encodePacked(_sn, _userA.account, _userA.token, _userA.amount, _userA.fee, _userB.account, _userB.token, _userB.amount, _userB.fee, _expired, id+8, address(this)));
         require(verifyMessage(messageHash, _signature), "invalid signature");
         bool a = checkAccountBound(_userA.account, msg.sender);
         bool b = checkAccountBound(_userB.account, msg.sender);
