@@ -69,7 +69,7 @@
     "proxy": true,
     "address": "0x8971fb14a37B9E9A940bE4789f1bb00c9804cd0F",
     "constructorArgs": [],
-    "upgradedAddress": "0x3Aa78864b2292CdE7D07cFEc44E7d9104B4Bd07f",
+    "upgradedAddress": "0x0C0825BA08fb998284f889192223b76eB543EA99",
     "deployed": true,
     "upgraded": true,
     "verified": true

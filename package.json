@@ -40,6 +40,9 @@
     "deploy:opencampus_sepolia": "node hardhat.switch.js opencampus_sepolia && npx hardhat run --network opencampus_sepolia scripts/deploy.ts",
     "verify:opencampus_sepolia": "node hardhat.switch.js opencampus_sepolia && npx hardhat run --network opencampus_sepolia scripts/verify.ts",
     "setup:opencampus_sepolia": "node hardhat.switch.js opencampus_sepolia && npx hardhat run --network opencampus_sepolia scripts/setup.ts",
+    "deploy:opencampus": "node hardhat.switch.js opencampus && npx hardhat run --network opencampus scripts/deploy.ts",
+    "verify:opencampus": "node hardhat.switch.js opencampus && npx hardhat run --network opencampus scripts/verify.ts",
+    "setup:opencampus": "node hardhat.switch.js opencampus && npx hardhat run --network opencampus scripts/setup.ts",
     "clean": "npx hardhat clean"
   },
   "keywords": [],

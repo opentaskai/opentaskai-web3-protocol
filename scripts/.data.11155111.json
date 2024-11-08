@@ -69,10 +69,10 @@
     "proxy": true,
     "address": "0xF58cD5dEAA238210d2cc1328Dd8eB27F5B2a30b2",
     "constructorArgs": [],
-    "upgradedAddress": "",
+    "upgradedAddress": "0x1A3B4764bF8813D1Ccf173c1aB613013B574c256",
     "deployed": true,
     "upgraded": true,
-    "verified": false
+    "verified": true
   },
   "AIGenesis": {
     "proxy": true,

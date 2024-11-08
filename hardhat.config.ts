@@ -127,18 +127,41 @@
       url: `https://open-campus-codex-sepolia.drpc.org`,
       accounts: [data.PrivateKey]
     },
+    opencampus: {
+      url: `https://rpc.edu-chain.raas.gelato.cloud`,
+      accounts: [data.PrivateKey]
+    },
    },
    etherscan: {
-      apiKey: {
-        mainnet: data.EtherscanApiKey,
-        goerli: data.EtherscanApiKey,
-        sepolia: data.EtherscanApiKey,
-        arbitrumOne: data.ArbitrumscanApiKey,
-        polygon: data.MaticscanApiKey,
-        bsc: data.BscscanApiKey,
-        bscTestnet: data.BscscanApiKey,
-        opencampus: data.opencampusApiKey,
-    }
+    apiKey: {
+      mainnet: data.EtherscanApiKey,
+      goerli: data.EtherscanApiKey,
+      sepolia: data.EtherscanApiKey,
+      arbitrumOne: data.ArbitrumscanApiKey,
+      polygon: data.MaticscanApiKey,
+      bsc: data.BscscanApiKey,
+      bscTestnet: data.BscscanApiKey,
+      opencampus_sepolia: "",
+      opencampus: data.opencampusApiKey,
+    },
+    customChains: [
+      {
+        network: "opencampus_sepolia",
+        chainId: 656476,
+        urls: {
+          apiURL: "https://edu-chain-testnet.blockscout.com/api",
+          browserURL: "https://edu-chain-testnet.blockscout.com"
+        }
+      },
+      {
+        network: "opencampus",
+        chainId: 41923,
+        urls: {
+          apiURL: "https://educhain.blockscout.com/api",
+          browserURL: "https://educhain.blockscout.com"
+        }
+      }
+    ]
    },
    paths: {
      sources: "./contracts",

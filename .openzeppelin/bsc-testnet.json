@@ -3258,6 +3258,175 @@
         },
         "namespaces": {}
       }
+    },
+    "f313eea5b7bc6c922f7dcbc992c6226b76f7b2315b2fa54bad7cfda7e7669a4c": {
+      "address": "0x0C0825BA08fb998284f889192223b76eB543EA99",
+      "txHash": "0x2f044b1636014a9d95db2036bb8ef67bc2fd021bfe98550838f5c0e0441556f0",
+      "layout": {
+        "solcVersion": "0.8.11",
+        "storage": [
+          {
+            "contract": "Configable",
+            "label": "config",
+            "type": "t_address",
+            "src": "contracts/Configable.sol:10"
+          },
+          {
+            "contract": "Configable",
+            "label": "owner",
+            "type": "t_address",
+            "src": "contracts/Configable.sol:11"
+          },
+          {
+            "contract": "ReentrancyGuard",
+            "label": "_status",
+            "type": "t_uint256",
+            "src": "contracts/ReentrancyGuard.sol:35"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initialized",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "contract": "Initializable",
+            "label": "_initializing",
+            "type": "t_bool",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "contract": "Payment",
+            "label": "NONE",
+            "type": "t_bytes32",
+            "src": "contracts/Payment.sol:60"
+          },
+          {
+            "contract": "Payment",
+            "label": "id",
+            "type": "t_uint256",
+            "src": "contracts/Payment.sol:61"
+          },
+          {
+            "contract": "Payment",
+            "label": "domainHash",
+            "type": "t_bytes32",
+            "src": "contracts/Payment.sol:62"
+          },
+          {
+            "contract": "Payment",
+            "label": "enabled",
+            "type": "t_bool",
+            "src": "contracts/Payment.sol:64"
+          },
+          {
+            "contract": "Payment",
+            "label": "nosnEnabled",
+            "type": "t_bool",
+            "src": "contracts/Payment.sol:65"
+          },
+          {
+            "contract": "Payment",
+            "label": "signer",
+            "type": "t_address",
+            "src": "contracts/Payment.sol:66"
+          },
+          {
+            "contract": "Payment",
+            "label": "feeTo",
+            "type": "t_address",
+            "src": "contracts/Payment.sol:67"
+          },
+          {
+            "contract": "Payment",
+            "label": "feeToAccount",
+            "type": "t_bytes32",
+            "src": "contracts/Payment.sol:68"
+          },
+          {
+            "contract": "Payment",
+            "label": "records",
+            "type": "t_mapping(t_bytes32,t_address)",
+            "src": "contracts/Payment.sol:71"
+          },
+          {
+            "contract": "Payment",
+            "label": "autoBindEnabled",
+            "type": "t_bool",
+            "src": "contracts/Payment.sol:73"
+          },
+          {
+            "contract": "Payment",
+            "label": "maxWalletCount",
+            "type": "t_uint256",
+            "src": "contracts/Payment.sol:74"
+          },
+          {
+            "contract": "Payment",
+            "label": "walletToAccount",
+            "type": "t_mapping(t_address,t_bytes32)",
+            "src": "contracts/Payment.sol:75"
+          },
+          {
+            "contract": "Payment",
+            "label": "walletsOfAccount",
+            "type": "t_mapping(t_bytes32,t_array(t_address)dyn_storage)",
+            "src": "contracts/Payment.sol:76"
+          },
+          {
+            "contract": "Payment",
+            "label": "userAccounts",
+            "type": "t_mapping(t_bytes32,t_mapping(t_address,t_struct(Account)524_storage))",
+            "src": "contracts/Payment.sol:79"
+          }
+        ],
+        "types": {
+          "t_bytes32": {
+            "label": "bytes32"
+          },
+          "t_uint256": {
+            "label": "uint256"
+          },
+          "t_bool": {
+            "label": "bool"
+          },
+          "t_address": {
+            "label": "address"
+          },
+          "t_mapping(t_bytes32,t_address)": {
+            "label": "mapping(bytes32 => address)"
+          },
+          "t_mapping(t_address,t_bytes32)": {
+            "label": "mapping(address => bytes32)"
+          },
+          "t_mapping(t_bytes32,t_array(t_address)dyn_storage)": {
+            "label": "mapping(bytes32 => address[])"
+          },
+          "t_array(t_address)dyn_storage": {
+            "label": "address[]"
+          },
+          "t_mapping(t_bytes32,t_mapping(t_address,t_struct(Account)524_storage))": {
+            "label": "mapping(bytes32 => mapping(address => struct Account))"
+          },
+          "t_mapping(t_address,t_struct(Account)524_storage)": {
+            "label": "mapping(address => struct Account)"
+          },
+          "t_struct(Account)524_storage": {
+            "label": "struct Account",
+            "members": [
+              {
+                "label": "available",
+                "type": "t_uint256"
+              },
+              {
+                "label": "frozen",
+                "type": "t_uint256"
+              }
+            ]
+          }
+        },
+        "namespaces": {}
+      }
     }
   }
 }
