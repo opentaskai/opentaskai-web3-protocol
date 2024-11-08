@@ -38,39 +38,5 @@
         "args": [
             "${feeWallet.address}"
         ]
-    },
-    {
-        "call": true,
-        "called": true,
-        "name": "AIGenesis",
-        "functionName": "setupConfig",
-        "contractName": "NFT",
-        "contractAddr": "",
-        "args": [
-            "${Config.address}"
-        ]
-    },
-    {
-        "call": true,
-        "called": true,
-        "name": "AIGenesis",
-        "functionName": "setSigner",
-        "contractName": "NFT",
-        "contractAddr": "",
-        "args": [
-            "${signerWallet.address}"
-        ]
-    },
-    {
-        "call": true,
-        "called": true,
-        "name": "AIGenesis",
-        "functionName": "setURI",
-        "contractName": "NFT",
-        "contractAddr": "",
-        "args": [
-            "https://asset.opentaskai.com/nft/AIGenesis/56/",
-            ".json"
-        ]
     }
 ]
