@@ -48,6 +48,7 @@ contract RewardClaim is Configable, Initializable {
     // Function to claim reward from a specific group
     function claimReward(uint256 _periodNumber, uint256 _groupId, uint256 _amount, bytes32[] calldata _proof) external onlyEnabled {
         Period storage period = periods[_periodNumber];
+        require(checkPeriodMerkleRoot(_periodNumber, _groupId), 'group disabled');
         require(!period.hasClaimed[msg.sender], "Reward already claimed");
         bytes32 leaf = keccak256(abi.encodePacked(msg.sender, _periodNumber, _groupId, _amount)); // Create leaf node
 
@@ -77,6 +78,10 @@ contract RewardClaim is Configable, Initializable {
 
     function getPeriodToken(uint256 _periodNumber) external view returns (address) {
         return periods[_periodNumber].token;
+    }
+
+    function checkPeriodMerkleRoot(uint256 _periodNumber, uint256 _groupId) public view returns (bool) {
+        return periods[_periodNumber].merkleRoot[_groupId] != 0x0000000000000000000000000000000000000000000000000000000000000000;
     }
 
     function _withdraw(address _to, address _token, uint _amount) internal returns (uint) {

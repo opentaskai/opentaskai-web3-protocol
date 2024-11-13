@@ -9,7 +9,9 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { LogConsole } from './shared/logconsol';
 import { expandWithDecimals, reduceWithDecimals } from './shared/numberDecimals';
 
-const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
+const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000';
+const NONE = '0x0000000000000000000000000000000000000000000000000000000000000000';
+
 let owner: SignerWithAddress, user1: SignerWithAddress, user2: SignerWithAddress;
 let rewardClaim: RewardClaim;
 let rewardFix: RewardFixture
@@ -83,8 +85,14 @@ const testCase = async (_tokenName: string = 'ETH') => {
       await rewardClaim.setPeriod(periodNumber, groupId, tokenAddr, merkleTree.root);
     });
 
-    it('config', async () => {
+    it('base', async () => {
       expect(await rewardClaim.config()).to.equal(rewardFix.config.address);
+      expect(await rewardClaim.getPeriodToken(periodNumber)).to.equal(tokenAddr);
+      expect(await rewardClaim.checkPeriodMerkleRoot(periodNumber, groupId)).to.be.true;
+
+      await rewardClaim.setPeriod(periodNumber, groupId, tokenAddr, NONE);
+      expect(await rewardClaim.checkPeriodMerkleRoot(periodNumber, groupId)).to.be.false;
+      await rewardClaim.setPeriod(periodNumber, groupId, tokenAddr, merkleTree.root);
     })
 
     it('withdraw', async () => {
@@ -127,8 +135,10 @@ const testCase = async (_tokenName: string = 'ETH') => {
         expect(res).to.be.false;
         const proof = merkleTree.tree.getHexProof(merkleLeaves.leaves[i]);
         // LogConsole.debug('proof:', proof);
-        await expect(rewardClaim.connect(merkleLeaves.users[i]).claimReward(periodNumber, groupId+1, expandWithDecimals(1, 18), proof)).to.be.revertedWith("Invalid proof");
+        await expect(rewardClaim.connect(merkleLeaves.users[i]).claimReward(periodNumber, groupId+1, expandWithDecimals(1, 18), proof)).to.be.revertedWith("group disabled");
 
+        await expect(rewardClaim.connect(merkleLeaves.users[i]).claimReward(periodNumber, groupId, expandWithDecimals(200, 18), proof)).to.be.revertedWith("Invalid proof");
+        
         const beforeBalance = await getBalance(merkleLeaves.users[i]);  
         const tx = await rewardClaim.connect(merkleLeaves.users[i]).claimReward(periodNumber, groupId, expandWithDecimals(1, 18), proof);
         const receipt:any = await tx.wait()
