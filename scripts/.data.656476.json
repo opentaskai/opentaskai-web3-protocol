@@ -86,5 +86,14 @@
     "deployed": true,
     "upgraded": true,
     "verified": false
+  },
+  "RewardClaim": {
+    "proxy": true,
+    "address": "0x50aBe05918b326788BceE63A6b6f8d18E2b2C096",
+    "constructorArgs": [],
+    "upgradedAddress": "0x27DfEC9DE58aA3AA3b703Abc71c200b39f443364",
+    "deployed": true,
+    "upgraded": true,
+    "verified": false
   }
 }

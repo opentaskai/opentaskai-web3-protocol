@@ -19,6 +19,11 @@
       "address": "0xF58cD5dEAA238210d2cc1328Dd8eB27F5B2a30b2",
       "txHash": "0x8c2e1ca8b1f8476137e28bada53fa4aa0937aeabbb8ed429daeff6ff8c8fdb51",
       "kind": "transparent"
+    },
+    {
+      "address": "0x50aBe05918b326788BceE63A6b6f8d18E2b2C096",
+      "txHash": "0x32fa1b139a4c955a44db8c190fed295e32f28b6727467bc2466e4a09df547913",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -784,6 +789,118 @@
                 "type": "t_uint256"
               }
             ]
+          }
+        },
+        "namespaces": {}
+      }
+    },
+    "7a0ad8f4af38d6ccca1ace20c8f5b1a84b3edc0d575f6c63ef702587b5d18a90": {
+      "address": "0x27DfEC9DE58aA3AA3b703Abc71c200b39f443364",
+      "txHash": "0xa49c661a1f7f178358dda60cd51840c181e41d51e33ae778d799992cd772cca4",
+      "layout": {
+        "solcVersion": "0.8.11",
+        "storage": [
+          {
+            "label": "config",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "Configable",
+            "src": "contracts/Configable.sol:10"
+          },
+          {
+            "label": "owner",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "Configable",
+            "src": "contracts/Configable.sol:11"
+          },
+          {
+            "label": "_initialized",
+            "offset": 20,
+            "slot": "1",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "label": "_initializing",
+            "offset": 21,
+            "slot": "1",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "label": "enabled",
+            "offset": 22,
+            "slot": "1",
+            "type": "t_bool",
+            "contract": "RewardClaim",
+            "src": "contracts/RewardClaim.sol:17"
+          },
+          {
+            "label": "periods",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_uint256,t_struct(Period)626_storage)",
+            "contract": "RewardClaim",
+            "src": "contracts/RewardClaim.sol:18"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_bytes32)": {
+            "label": "mapping(uint256 => bytes32)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Period)626_storage)": {
+            "label": "mapping(uint256 => struct RewardClaim.Period)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Period)626_storage": {
+            "label": "struct RewardClaim.Period",
+            "members": [
+              {
+                "label": "token",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "merkleRoot",
+                "type": "t_mapping(t_uint256,t_bytes32)",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "hasClaimed",
+                "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "2"
+              }
+            ],
+            "numberOfBytes": "96"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
           }
         },
         "namespaces": {}

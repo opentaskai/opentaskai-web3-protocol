@@ -38,5 +38,15 @@
         "args": [
             "${feeWallet.address}"
         ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "functionName": "setupConfig",
+        "contractName": "RewardClaim",
+        "contractAddr": "",
+        "args": [
+            "${Config.address}"
+        ]
     }
 ]
