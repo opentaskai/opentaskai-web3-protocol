@@ -10,8 +10,17 @@ import "./lib/TransferHelper.sol";
 contract RewardClaim is Configable, Initializable {
     struct Period {
         address token; // Token for the reward
+        uint256 userCount; // user count
+        uint256 totalAmount; // total amount
         mapping(uint256 => bytes32) merkleRoot; // Merkle root for the group
         mapping(address => bool) hasClaimed; // Track if an address has claimed their reward in this period number
+    
+    }
+
+    struct PeriodInfo {
+        address token;
+        uint256 userCount;
+        uint256 totalAmount;
     }
 
     bool public enabled;
@@ -56,6 +65,8 @@ contract RewardClaim is Configable, Initializable {
 
         _withdraw(msg.sender, period.token, _amount);
         period.hasClaimed[msg.sender] = true; // Mark as claimed
+        period.userCount++;
+        period.totalAmount += _amount;
         emit RewardClaimed(msg.sender, _amount, _periodNumber);
     }
 
@@ -76,8 +87,12 @@ contract RewardClaim is Configable, Initializable {
         }
     }
 
-    function getPeriodToken(uint256 _periodNumber) external view returns (address) {
-        return periods[_periodNumber].token;
+    function getPeriodInfo(uint256 _periodNumber) external view returns (PeriodInfo memory) {
+        return PeriodInfo({
+            token: periods[_periodNumber].token,
+            userCount: periods[_periodNumber].userCount,
+            totalAmount: periods[_periodNumber].totalAmount
+        });
     }
 
     function checkPeriodMerkleRoot(uint256 _periodNumber, uint256 _groupId) public view returns (bool) {

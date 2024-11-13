@@ -87,7 +87,13 @@ const testCase = async (_tokenName: string = 'ETH') => {
 
     it('base', async () => {
       expect(await rewardClaim.config()).to.equal(rewardFix.config.address);
-      expect(await rewardClaim.getPeriodToken(periodNumber)).to.equal(tokenAddr);
+      const periodInfo = await rewardClaim.getPeriodInfo(periodNumber);
+      LogConsole.debug('periodInfo:', periodInfo);
+      expect(periodInfo).to.deep.equal([
+        tokenAddr,
+        BigNumber.from(0),
+        BigNumber.from(0)
+      ]);
       expect(await rewardClaim.checkPeriodMerkleRoot(periodNumber, groupId)).to.be.true;
 
       await rewardClaim.setPeriod(periodNumber, groupId, tokenAddr, NONE);
@@ -125,9 +131,13 @@ const testCase = async (_tokenName: string = 'ETH') => {
       const balance = await rewardClaim.getBalance(tokenAddr)
       LogConsole.debug('before claim balance:', balance, reduceWithDecimals(balance, 18));
 
-      const token = await rewardClaim.getPeriodToken(periodNumber);
-      LogConsole.debug('token:', token);
-      expect(token).to.equal(tokenAddr);
+      const periodInfo = await rewardClaim.getPeriodInfo(periodNumber);
+      LogConsole.debug('periodInfo:', periodInfo);
+      expect(periodInfo).to.deep.equal([
+        tokenAddr,
+        BigNumber.from(0),
+        BigNumber.from(0)
+      ]);
 
       for (let i=0; i<merkleLeaves.users.length; i++) {
         res = await rewardClaim.hasClaimed(periodNumber, merkleLeaves.users[i].address);
@@ -163,6 +173,14 @@ const testCase = async (_tokenName: string = 'ETH') => {
 
         await expect(rewardClaim.connect(merkleLeaves.users[i]).claimReward(periodNumber, groupId, expandWithDecimals(1, 18), proof)).to.be.revertedWith("Reward already claimed");
       }
+
+      const periodInfo2 = await rewardClaim.getPeriodInfo(periodNumber);
+      LogConsole.debug('periodInfo2:', periodInfo2);
+      expect(periodInfo2).to.deep.equal([
+        tokenAddr,
+        BigNumber.from(merkleLeaves.users.length),
+        expandWithDecimals(merkleLeaves.users.length, 18)
+      ]);
     });
 
   });
