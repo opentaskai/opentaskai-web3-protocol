@@ -88,7 +88,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
     usdt = payFix.usdt;
     usdc = payFix.usdc;
     payment = payFix.payment;
-
+    tokenName = _tokenName;
     tokenAddr = ZERO_ADDRESS;
     if(tokenName === 'usdt') {
       tokenAddr = usdt.address;
@@ -115,7 +115,7 @@ const testCase = async (_tokenName:string = 'ETH') => {
     LogConsole.debug('tokenName:', tokenName);
     LogConsole.debug('tokenAddr:', tokenAddr);
   })
-    tokenName = _tokenName;
+    
     const depositAmount = expandWithDecimals(6);
     const frozenAmount = depositAmount.div(2);
     const availableAmount = depositAmount.sub(frozenAmount);

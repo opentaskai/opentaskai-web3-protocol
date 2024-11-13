@@ -8,6 +8,7 @@ import { _TypedDataEncoder } from "@ethersproject/hash";
 const { defaultAbiCoder, keccak256, solidityPack } = utils;
 import { ethers, network } from 'hardhat';
 import { findPrivateKey } from "./hardhat-keys";
+import { MerkleTree } from 'merkletreejs'
 import { LogConsole } from './logconsol'
 
 export const eth_sign = async function (
@@ -105,3 +106,9 @@ export const computeDomainSeparator = (domain: TypedDataDomain): string => {
 export const computeMessageHash = (types: string[], values: (string | boolean | number | BigNumber)[]): string => {
   return keccak256(solidityPack(types, values));
 };
+
+export const makeMerkleTree = async function (leafs: any[]): Promise<{ tree: MerkleTree, root: string }> {
+    let tree = new MerkleTree(leafs, ethers.utils.keccak256, { sortPairs: true })
+    let rootHash = tree.getHexRoot()
+    return { tree: tree, root: rootHash }
+}

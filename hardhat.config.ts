@@ -24,7 +24,6 @@
   "opencampusApiKey": "",
 };
  
- console.log('opencampusApiKey:', data.opencampusApiKey);
  let filePath = path.join(USER_HOME+'/.hardhat.data.json');
  if (fs.existsSync(filePath)) {
    let rawdata = fs.readFileSync(filePath);

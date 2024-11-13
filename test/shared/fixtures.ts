@@ -2,6 +2,7 @@ import { BigNumber, Wallet } from 'ethers'
 import { ethers, network } from 'hardhat'
 import { ERC20Token } from '../../typechain/ERC20Token'
 import { Payment } from '../../typechain/Payment'
+import { RewardClaim } from '../../typechain/RewardClaim'
 import { NFT } from '../../typechain/NFT'
 import { Config } from '../../typechain/Config'
 import { Fixture } from 'ethereum-waffle'
@@ -57,6 +58,12 @@ async function erc20Contract(name: string, symbol: string, decimals: number): Pr
 async function paymentContract(): Promise<Payment> {
     let factory = await ethers.getContractFactory('Payment')
     let contract = (await factory.deploy()) as Payment
+    return contract
+}
+
+async function rewardClaimContract(): Promise<RewardClaim> {
+    let factory = await ethers.getContractFactory('RewardClaim')
+    let contract = (await factory.deploy()) as RewardClaim
     return contract
 }
 
@@ -362,4 +369,27 @@ export const nftFixture: Fixture<NFTFixture> = async function ([owner, signer, f
     }
 
     return { nft, config, signMintData }
+}
+
+export interface RewardFixture {
+    rewardClaim: RewardClaim,
+    config: Config,
+    usdt: ERC20Token,
+}
+
+
+export const rewardFixture: Fixture<RewardFixture> = async function ([owner, user1, user2]: Wallet[]): Promise<RewardFixture> {
+    const config = await configContract()
+
+    const rewardClaim = await rewardClaimContract()
+    await rewardClaim.initialize()
+    await rewardClaim.setupConfig(config.address)
+
+
+    const usdt = await erc20Contract("Test USDT", "USDT", 18)
+    await usdt.mint(owner.address, expandWithDecimals(10_000))
+    await usdt.mint(user1.address, expandWithDecimals(10_000))
+    await usdt.mint(user2.address, expandWithDecimals(10_000))
+    
+    return { rewardClaim, config, usdt }
 }
