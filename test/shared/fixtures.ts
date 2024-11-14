@@ -3,6 +3,7 @@ import { ethers, network } from 'hardhat'
 import { ERC20Token } from '../../typechain/ERC20Token'
 import { Payment } from '../../typechain/Payment'
 import { RewardClaim } from '../../typechain/RewardClaim'
+import { PaymentRewardClaim } from '../../typechain/PaymentRewardClaim'
 import { NFT } from '../../typechain/NFT'
 import { Config } from '../../typechain/Config'
 import { Fixture } from 'ethereum-waffle'
@@ -64,6 +65,12 @@ async function paymentContract(): Promise<Payment> {
 async function rewardClaimContract(): Promise<RewardClaim> {
     let factory = await ethers.getContractFactory('RewardClaim')
     let contract = (await factory.deploy()) as RewardClaim
+    return contract
+}
+
+async function paymentRewardClaimContract(): Promise<PaymentRewardClaim> {
+    let factory = await ethers.getContractFactory('PaymentRewardClaim')
+    let contract = (await factory.deploy()) as PaymentRewardClaim
     return contract
 }
 
@@ -392,4 +399,33 @@ export const rewardFixture: Fixture<RewardFixture> = async function ([owner, use
     await usdt.mint(user2.address, expandWithDecimals(10_000))
     
     return { rewardClaim, config, usdt }
+}
+
+export interface PaymentRewardFixture {
+    rewardClaim: PaymentRewardClaim,
+    payment: Payment,
+    config: Config,
+    usdt: ERC20Token,
+}
+
+
+export const paymentRewardFixture: Fixture<PaymentRewardFixture> = async function ([owner, user1, user2]: Wallet[]): Promise<PaymentRewardFixture> {
+    const config = await configContract()
+
+    const payment = await paymentContract()
+    await payment.initialize()
+    await payment.setNoSnEnabled(true);
+
+    const rewardClaim = await paymentRewardClaimContract()
+    await rewardClaim.initialize(payment.address)
+    await rewardClaim.setupConfig(config.address)
+
+    const usdt = await erc20Contract("Test USDT", "USDT", 18)
+    await usdt.mint(owner.address, expandWithDecimals(10_000))
+    await usdt.mint(user1.address, expandWithDecimals(10_000))
+    await usdt.mint(user2.address, expandWithDecimals(10_000))
+
+    await rewardClaim.setPaymentAllowance(usdt.address, expandWithDecimals(10_000, 18))
+
+    return { rewardClaim, payment, config, usdt }
 }
