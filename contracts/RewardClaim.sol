@@ -41,9 +41,17 @@ contract RewardClaim is Configable, Initializable {
     }
 
     // Function to set period
-    function setPeriod(uint256 _periodNumber, uint256 _groupId, address _token, bytes32 _merkleRoot) external onlyDev {
-        periods[_periodNumber].merkleRoot[_groupId] = _merkleRoot; // Set the Merkle root for the specified group
+    function setPeriod(uint256 _periodNumber, uint256 _groupId, address _token, bytes32 _merkleRoot) external onlyManager {
+        periods[_periodNumber].merkleRoot[_groupId] = _merkleRoot;
         periods[_periodNumber].token = _token;
+    }
+
+    function batchSetPeriod(uint256[] memory _periodNumbers, uint256[] memory _groupIds, address[] memory _tokens, bytes32[] memory _merkleRoots) external onlyManager {
+        require(_periodNumbers.length == _groupIds.length && _periodNumbers.length == _tokens.length && _periodNumbers.length == _merkleRoots.length, 'invalid length');
+        for(uint256 i = 0; i < _periodNumbers.length; i++) {
+            periods[_periodNumbers[i]].merkleRoot[_groupIds[i]] = _merkleRoots[i];
+            periods[_periodNumbers[i]].token = _tokens[i];
+        }
     }
 
     function setEnabled(bool _enabled) external onlyDev {

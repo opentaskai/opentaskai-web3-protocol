@@ -98,7 +98,7 @@ const testCase = async (_tokenName: string = 'ETH') => {
 
       await rewardClaim.setPeriod(periodNumber, groupId, tokenAddr, NONE);
       expect(await rewardClaim.checkPeriodMerkleRoot(periodNumber, groupId)).to.be.false;
-      await rewardClaim.setPeriod(periodNumber, groupId, tokenAddr, merkleTree.root);
+      await rewardClaim.batchSetPeriod([periodNumber], [groupId], [tokenAddr], [merkleTree.root]);
     })
 
     it('withdraw', async () => {
