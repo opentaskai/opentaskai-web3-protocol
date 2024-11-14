@@ -29,6 +29,11 @@
       "address": "0x7C35db8CD3A8EeC823b9556D0B71f6659EBfe7fB",
       "txHash": "0x959d7001070ddafacd4739a67314d6e2531a325ad4bac65163b37bb6e2d26dac",
       "kind": "transparent"
+    },
+    {
+      "address": "0xb3497E728715f7195828e32B467C3719a94525Eb",
+      "txHash": "0xf072811dea386e8a94d603813625c939962cf629d36e2dd39318c3a9162c9125",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -1145,6 +1150,138 @@
               {
                 "label": "hasClaimed",
                 "type": "t_mapping(t_address,t_bool)",
+                "offset": 0,
+                "slot": "4"
+              }
+            ],
+            "numberOfBytes": "160"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        },
+        "namespaces": {}
+      }
+    },
+    "9d4989ca688a40c77756ed3667c3916ac6f2b15da62bf7da3762c6d86542ed26": {
+      "address": "0x6c9c9Bf7378460626D566814EcC5739440D2E972",
+      "txHash": "0xd8f7ae9794f50554ef3e6946621037a676e0ad066dd98a0fee6b4c0ec44135b9",
+      "layout": {
+        "solcVersion": "0.8.11",
+        "storage": [
+          {
+            "label": "config",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "Configable",
+            "src": "contracts/Configable.sol:10"
+          },
+          {
+            "label": "owner",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "Configable",
+            "src": "contracts/Configable.sol:11"
+          },
+          {
+            "label": "_initialized",
+            "offset": 20,
+            "slot": "1",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "label": "_initializing",
+            "offset": 21,
+            "slot": "1",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "label": "payment",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_address",
+            "contract": "PaymentRewardClaim",
+            "src": "contracts/PaymentRewardClaim.sol:27"
+          },
+          {
+            "label": "enabled",
+            "offset": 20,
+            "slot": "2",
+            "type": "t_bool",
+            "contract": "PaymentRewardClaim",
+            "src": "contracts/PaymentRewardClaim.sol:28"
+          },
+          {
+            "label": "periods",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_mapping(t_uint256,t_struct(Period)631_storage)",
+            "contract": "PaymentRewardClaim",
+            "src": "contracts/PaymentRewardClaim.sol:29"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_bytes32": {
+            "label": "bytes32",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_bytes32,t_bool)": {
+            "label": "mapping(bytes32 => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_bytes32)": {
+            "label": "mapping(uint256 => bytes32)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_uint256,t_struct(Period)631_storage)": {
+            "label": "mapping(uint256 => struct PaymentRewardClaim.Period)",
+            "numberOfBytes": "32"
+          },
+          "t_struct(Period)631_storage": {
+            "label": "struct PaymentRewardClaim.Period",
+            "members": [
+              {
+                "label": "token",
+                "type": "t_address",
+                "offset": 0,
+                "slot": "0"
+              },
+              {
+                "label": "userCount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "1"
+              },
+              {
+                "label": "totalAmount",
+                "type": "t_uint256",
+                "offset": 0,
+                "slot": "2"
+              },
+              {
+                "label": "merkleRoot",
+                "type": "t_mapping(t_uint256,t_bytes32)",
+                "offset": 0,
+                "slot": "3"
+              },
+              {
+                "label": "hasClaimed",
+                "type": "t_mapping(t_bytes32,t_bool)",
                 "offset": 0,
                 "slot": "4"
               }

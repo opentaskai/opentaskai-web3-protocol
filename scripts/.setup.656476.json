@@ -48,5 +48,36 @@
         "args": [
             "${Config.address}"
         ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "functionName": "setupConfig",
+        "contractName": "PaymentRewardClaim",
+        "contractAddr": "",
+        "args": [
+            "${Config.address}"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "functionName": "setPaymentAllowance",
+        "contractName": "PaymentRewardClaim",
+        "contractAddr": "",
+        "args": [
+            "${USDT.address}",
+            "10000000000000000000000000000000000000000"
+        ]
+    },
+    {
+        "call": true,
+        "called": true,
+        "functionName": "setNoSnEnabled",
+        "contractName": "Payment",
+        "contractAddr": "",
+        "args": [
+            true
+        ]
     }
 ]

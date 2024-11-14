@@ -95,5 +95,16 @@
     "deployed": true,
     "upgraded": true,
     "verified": false
+  },
+  "PaymentRewardClaim": {
+    "proxy": true,
+    "address": "0xb3497E728715f7195828e32B467C3719a94525Eb",
+    "constructorArgs": [
+      "${Payment.address}"
+    ],
+    "upgradedAddress": "0x6c9c9Bf7378460626D566814EcC5739440D2E972",
+    "deployed": true,
+    "upgraded": true,
+    "verified": false
   }
 }
