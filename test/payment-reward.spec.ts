@@ -121,6 +121,13 @@ const testCase = async (_tokenName: string = 'ETH') => {
       expect(await rewardClaim.checkPeriodMerkleRoot(periodNumber, groupId)).to.be.false;
       await rewardClaim.batchSetPeriod([periodNumber], [groupId], [tokenAddr], [merkleTree.root]);
 
+      await expect(rewardClaim.connect(user1).setPeriod(periodNumber, groupId, tokenAddr, merkleTree.root)).to.be.revertedWith('manager forbidden');
+
+      await expect(rewardClaim.connect(user1).batchSetPeriod([periodNumber], [groupId], [tokenAddr], [merkleTree.root])).to.be.revertedWith('manager forbidden');
+
+      await expect(rewardClaim.connect(user1).setEnabled(false)).to.be.revertedWith('dev forbidden');
+      await expect(rewardClaim.connect(user1).setPaymentAllowance(usdt.address, 1000000000)).to.be.revertedWith('manager forbidden');
+
       for (let i=0; i<accounts.length; i++) {
         const balance = await getAccountBalance(accounts[i]);
         LogConsole.debug('balance:', balance);
