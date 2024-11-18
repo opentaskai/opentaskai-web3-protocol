@@ -141,7 +141,7 @@
       polygon: data.MaticscanApiKey,
       bsc: data.BscscanApiKey,
       bscTestnet: data.BscscanApiKey,
-      opencampus_sepolia: "",
+      opencampus_sepolia: data.opencampusApiKey,
       opencampus: data.opencampusApiKey,
     },
     customChains: [
