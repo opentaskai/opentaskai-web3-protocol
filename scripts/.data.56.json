@@ -42,10 +42,10 @@
   "Config": {
     "address": "0x78e94233bD554f02c9A694a7eC30A929c36C5339",
     "constructorArgs": [],
-    "upgradedAddress": "",
+    "upgradedAddress": "0x78e94233bD554f02c9A694a7eC30A929c36C5339",
     "deployed": true,
     "upgraded": true,
-    "verified": false
+    "verified": true
   },
   "AIGenesis": {
     "proxy": true,
