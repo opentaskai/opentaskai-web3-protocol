@@ -45,17 +45,17 @@
     "verified": true
   },
   "USDC": {
-    "address": "0x6A472FE58bcEAd5F2dC9Fc85dA4d49d2c055F35c",
+    "address": "0x643b2700A519b87ED21Fe62D4989e451C351B588",
     "contractName": "ERC20Token",
     "constructorArgs": [
       "Test USDC",
-      "USDT",
+      "USDC",
       18
     ],
-    "upgradedAddress": "",
+    "upgradedAddress": "0x643b2700A519b87ED21Fe62D4989e451C351B588",
     "deployed": true,
     "upgraded": true,
-    "verified": false
+    "verified": true
   },
   "Config": {
     "address": "0x55bB4dAF3568055AD386fbcDa86d6a407961fB73",
