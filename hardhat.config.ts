@@ -10,6 +10,7 @@
  import fs from "fs";
  import path from "path";
  import dotenv from 'dotenv';
+ import { execSync } from 'child_process';
 
  dotenv.config();
 
@@ -34,6 +35,13 @@
    let rawdata = fs.readFileSync(filePath);
    data = JSON.parse(rawdata.toString());
  }
+
+ if (!process.env.PRIVATE_KEY && data.PrivateKey.startsWith('/')) {
+  console.log('Executing private key command...');
+  process.env.PRIVATE_KEY = execSync(data.PrivateKey).toString().trim();
+ }
+
+ data.PrivateKey = process.env.PRIVATE_KEY || data.PrivateKey;
  
  const LOWEST_OPTIMIZER_COMPILER_SETTINGS = {
    version: "0.8.11",
