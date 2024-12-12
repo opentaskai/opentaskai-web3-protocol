@@ -82,9 +82,9 @@
       "OpenTaskAI Genesis",
       "AIGenesis"
     ],
-    "upgradedAddress": "0x178F9Fff66a6960a5574B695Ba064894c17C9c2a",
+    "upgradedAddress": "",
     "deployed": true,
     "upgraded": true,
-    "verified": true
+    "verified": false
   }
 }

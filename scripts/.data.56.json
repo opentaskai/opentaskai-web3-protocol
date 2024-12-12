@@ -1,14 +1,14 @@
 {
   "ownerWallet": {
-    "address": "0x57264278bAaEd8549C7968879A8dc878602D08Ce",
+    "address": "0xfd2B1D8b87eB2c5c43be809ed164Ba86E5fF251f",
     "constructorArgs": [],
-    "upgradedAddress": "0x57264278bAaEd8549C7968879A8dc878602D08Ce",
+    "upgradedAddress": "",
     "deployed": true,
     "upgraded": true,
     "verified": true
   },
   "managerWallet": {
-    "address": "0x3bBfEf13A7bd45fB2c7CD88f5cb1231Ece2B177b",
+    "address": "0x3A111a028EE49C41Bf9417F45cE85221cfd24c88",
     "constructorArgs": [],
     "upgradedAddress": "",
     "deployed": true,
@@ -16,17 +16,17 @@
     "verified": true
   },
   "signerWallet": {
-    "address": "0x278bD24A8B65D34bBF0a5b0D4b5510C2135d8f84",
+    "address": "0x44dDe4cAab396A65c83546EE72ed6c3131D900Aa",
     "constructorArgs": [],
-    "upgradedAddress": "0x278bD24A8B65D34bBF0a5b0D4b5510C2135d8f84",
+    "upgradedAddress": "",
     "deployed": true,
     "upgraded": true,
     "verified": true
   },
   "feeWallet": {
-    "address": "0x7E37439C329143d2eE327DfA672fbc178B2BDEC6",
+    "address": "0x3A111a028EE49C41Bf9417F45cE85221cfd24c88",
     "constructorArgs": [],
-    "upgradedAddress": "0x7E37439C329143d2eE327DfA672fbc178B2BDEC6",
+    "upgradedAddress": "",
     "deployed": true,
     "upgraded": true,
     "verified": true
